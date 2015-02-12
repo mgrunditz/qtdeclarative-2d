@@ -4,7 +4,10 @@
 config.tests/*/*/*
 !config.tests/*/*/*[.]*
 config.tests/*/*/*[.]app
-
+examples/**
+mkspecs/**
+tools/**
+tests/**
 callgrind.out.*
 pcviewer.cfg
 *~
@@ -40,6 +43,7 @@ Makefile*
 *.pro.user
 *.qmlproject.user
 *.gcov
+*.old
 bin/Qt*.dll
 bin/assistant*
 bin/designer*

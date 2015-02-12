@@ -82,9 +82,9 @@ class Q_QUICK_PRIVATE_EXPORT QQuickTextInput : public QQuickImplicitSizeItem
     Q_PROPERTY(QString selectedText READ selectedText NOTIFY selectedTextChanged)
 
     Q_PROPERTY(int maximumLength READ maxLength WRITE setMaxLength NOTIFY maximumLengthChanged)
-#ifndef QT_NO_VALIDATOR
+//#ifndef QT_NO_VALIDATOR
     Q_PROPERTY(QValidator* validator READ validator WRITE setValidator NOTIFY validatorChanged)
-#endif
+//#endif
     Q_PROPERTY(QString inputMask READ inputMask WRITE setInputMask NOTIFY inputMaskChanged)
 #ifndef QT_NO_IM
     Q_PROPERTY(Qt::InputMethodHints inputMethodHints READ inputMethodHints WRITE setInputMethodHints NOTIFY inputMethodHintsChanged)
@@ -332,7 +332,8 @@ protected:
     void focusOutEvent(QFocusEvent *event);
     void focusInEvent(QFocusEvent *event);
     void timerEvent(QTimerEvent *event);
-    QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data);
+    //QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data);
+    void updatePaintNode();
 
 public Q_SLOTS:
     void selectAll();

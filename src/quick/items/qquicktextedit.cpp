@@ -1709,9 +1709,9 @@ void QQuickTextEdit::inputMethodEvent(QInputMethodEvent *event)
 
 /*!
 \overload
-Returns the value of the given \a property and \a argument.
+Returns the value of the given \a property.
 */
-QVariant QQuickTextEdit::inputMethodQuery(Qt::InputMethodQuery property, QVariant argument) const
+QVariant QQuickTextEdit::inputMethodQuery(Qt::InputMethodQuery property) const
 {
     Q_D(const QQuickTextEdit);
 
@@ -1724,19 +1724,11 @@ QVariant QQuickTextEdit::inputMethodQuery(Qt::InputMethodQuery property, QVarian
         v = (int)d->effectiveInputMethodHints();
         break;
     default:
-        v = d->control->inputMethodQuery(property, argument);
+        v = d->control->inputMethodQuery(property);
         break;
     }
     return v;
-}
 
-/*!
-\overload
-Returns the value of the given \a property.
-*/
-QVariant QQuickTextEdit::inputMethodQuery(Qt::InputMethodQuery property) const
-{
-    return inputMethodQuery(property, QVariant());
 }
 #endif // QT_NO_IM
 
@@ -1764,6 +1756,10 @@ static inline void updateNodeTransform(QQuickTextNode* node, const QPointF &topL
     node->setMatrix(transformMatrix);
 }
 
+void QQuickTextEdit::updatePaintNode()
+{
+}
+/*
 QSGNode *QQuickTextEdit::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *updatePaintNodeData)
 {
     Q_UNUSED(updatePaintNodeData);
@@ -1919,7 +1915,7 @@ QSGNode *QQuickTextEdit::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *
 
     return rootNode;
 }
-
+*/
 /*!
     \qmlproperty bool QtQuick::TextEdit::canPaste
 
@@ -2023,7 +2019,6 @@ void QQuickTextEditPrivate::init()
     qmlobject_connect(document, QQuickTextDocumentWithImageResources, SIGNAL(redoAvailable(bool)), q, QQuickTextEdit, SIGNAL(canRedoChanged()));
     qmlobject_connect(document, QQuickTextDocumentWithImageResources, SIGNAL(imagesLoaded()), q, QQuickTextEdit, SLOT(updateSize()));
     QObject::connect(document, &QQuickTextDocumentWithImageResources::contentsChange, q, &QQuickTextEdit::q_contentsChange);
-    QObject::connect(document->documentLayout(), &QAbstractTextDocumentLayout::updateBlock, q, &QQuickTextEdit::invalidateBlock);
 
     document->setDefaultFont(font);
     document->setDocumentMargin(textMargin);
@@ -2256,11 +2251,6 @@ void QQuickTextEdit::updateWholeDocument()
         d->updateType = QQuickTextEditPrivate::UpdatePaintNode;
         update();
     }
-}
-
-void QQuickTextEdit::invalidateBlock(const QTextBlock &block)
-{
-    markDirtyNodesForRange(block.position(), block.position() + block.length(), 0);
 }
 
 void QQuickTextEdit::updateCursor()

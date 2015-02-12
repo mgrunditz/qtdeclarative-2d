@@ -683,13 +683,13 @@ void QQuickStyledTextPrivate::parseImageAttributes(const QChar *&ch, const QStri
             // to avoid a relayout later on.
             QUrl url = baseUrl.resolved(image->url);
             if (url.isLocalFile()) {
-                image->pix = new QQuickPixmap(context->engine(), url, image->size);
-                if (image->pix && image->pix->isReady()) {
-                    image->size = image->pix->implicitSize();
-                } else {
-                    delete image->pix;
-                    image->pix = 0;
-                }
+                image->pix = new QPixmap(url.fileName());
+                //if (image->pix && image->pix->isReady()) {
+                    image->size = image->pix->size();
+                //} else {
+                  //  delete image->pix;
+                    //image->pix = 0;
+                //}
             }
         }
 

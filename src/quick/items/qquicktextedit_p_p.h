@@ -132,7 +132,7 @@ public:
 
     void setNativeCursorEnabled(bool enabled) { control->setCursorWidth(enabled ? 1 : 0); }
     void handleFocusEvent(QFocusEvent *event);
-    void addCurrentTextNodeToRoot(QSGTransformNode *, QQuickTextNode*, TextNodeIterator&, int startPos);
+//    void addCurrentTextNodeToRoot(QSGTransformNode *, QQuickTextNode*, TextNodeIterator&, int startPos);
     QQuickTextNode* createTextNode();
 
 #ifndef QT_NO_IM

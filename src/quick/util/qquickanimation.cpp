@@ -231,6 +231,7 @@ QQmlProperty QQuickAbstractAnimationPrivate::createProperty(QObject *obj, const 
 void QQuickAbstractAnimation::setRunning(bool r)
 {
     Q_D(QQuickAbstractAnimation);
+    qDebug("set runnning");
     if (!d->componentComplete) {
         d->running = r;
         if (r == false)
@@ -267,6 +268,7 @@ void QQuickAbstractAnimation::setRunning(bool r)
             supressStart = true;    //we want the animation to continue, rather than restart
         }
         if (!supressStart) {
+            qDebug("commence");
             d->commence();
             emit started();
         }

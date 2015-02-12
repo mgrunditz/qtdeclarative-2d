@@ -103,8 +103,10 @@ public:
     int textureId() const;
     QSize textureSize() const { return m_size; }
 
-    GLenum format() const { return m_format; }
-    void setFormat(GLenum format);
+    //GLenum format() const { return m_format; }
+    int format() const { return m_format; }
+    //void setFormat(GLenum format);
+    void setFormat(int format);
 
     bool live() const { return bool(m_live); }
     void setLive(bool live);
@@ -133,14 +135,16 @@ private:
     QRectF m_rect;
     QSize m_size;
     qreal m_device_pixel_ratio;
-    GLenum m_format;
+    //GLenum m_format;
+    int m_format;
 
     QSGRenderer *m_renderer;
     QOpenGLFramebufferObject *m_fbo;
     QOpenGLFramebufferObject *m_secondaryFbo;
     QSharedPointer<QSGDepthStencilBuffer> m_depthStencilBuffer;
 
-    GLuint m_transparentTexture;
+    //GLuint m_transparentTexture;
+    int m_transparentTexture;
 
 #ifdef QSG_DEBUG_FBO_OVERLAY
     QSGSimpleRectNode *m_debugOverlay;
@@ -180,9 +184,9 @@ public:
     };
 
     enum Format {
-        Alpha = GL_ALPHA,
-        RGB = GL_RGB,
-        RGBA = GL_RGBA
+      Alpha = 0,//GL_ALPHA,
+      RGB = 0,//GL_RGB,
+      RGBA = 0//GL_RGBA
     };
 
     QQuickShaderEffectSource(QQuickItem *parent = 0);

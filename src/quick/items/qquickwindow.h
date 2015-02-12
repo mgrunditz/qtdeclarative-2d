@@ -47,11 +47,12 @@
 #include <QtGui/qopengl.h>
 #include <QtGui/qwindow.h>
 #include <QtGui/qevent.h>
-
+#include <QMutex>
+#include <QPainter>
 QT_BEGIN_NAMESPACE
 
 class QQuickItem;
-class QSGTexture;
+//class QSGTexture;
 class QInputMethodEvent;
 class QQuickWindowPrivate;
 class QOpenGLFramebufferObject;
@@ -76,7 +77,8 @@ public:
         TextureOwnsGLTexture    = 0x0004,
         TextureCanUseAtlas      = 0x0008
     };
-
+    QMutex winmutex;
+    QRect dirtyZone;
     Q_DECLARE_FLAGS(CreateTextureOptions, CreateTextureOption)
 
     enum SceneGraphError {
@@ -85,9 +87,11 @@ public:
     Q_ENUMS(SceneGraphError)
 
     QQuickWindow(QWindow *parent = 0);
+    //QQuickWindow(QScreen *screen);
 
     virtual ~QQuickWindow();
-
+    void beginPaint();
+    void endPaint();
     QQuickItem *contentItem() const;
 
     QQuickItem *activeFocusItem() const;
@@ -108,17 +112,17 @@ public:
 
     void resetOpenGLState();
 
-    QQmlIncubationController *incubationController() const;
+    QQmlIncubationController *incubationController() ;//const;
 
 #ifndef QT_NO_ACCESSIBILITY
     virtual QAccessibleInterface *accessibleRoot() const;
 #endif
 
     // Scene graph specific functions
-    QSGTexture *createTextureFromImage(const QImage &image) const;
+    /*QSGTexture *createTextureFromImage(const QImage &image) const;
     QSGTexture *createTextureFromImage(const QImage &image, CreateTextureOptions options) const;
     QSGTexture *createTextureFromId(uint id, const QSize &size, CreateTextureOptions options = CreateTextureOption(0)) const;
-
+*/
     void setClearBeforeRendering(bool enabled);
     bool clearBeforeRendering() const;
 
@@ -133,8 +137,8 @@ public:
 
     void setPersistentSceneGraph(bool persistent);
     bool isPersistentSceneGraph() const;
-
-    QOpenGLContext *openglContext() const;
+    QPainter * qpnter;
+ //   QOpenGLContext *openglContext() const;
 
 Q_SIGNALS:
     void frameSwapped();
@@ -193,6 +197,9 @@ private:
     friend class QQuickWidget;
     friend class QQuickRenderControl;
     friend class QQuickAnimatorController;
+    QImage m_image;
+    QBackingStore *m_backingStore;
+
     explicit QQuickWindow(QQuickRenderControl*);
     Q_DISABLE_COPY(QQuickWindow)
 };

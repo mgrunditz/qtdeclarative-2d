@@ -42,51 +42,14 @@
 #include "qquickimage_p.h"
 #include "qquickimage_p_p.h"
 
-#include <QtQuick/qsgtextureprovider.h>
 
 #include <QtQuick/private/qsgcontext_p.h>
-#include <private/qsgadaptationlayer_p.h>
 
 #include <QtGui/qpainter.h>
 #include <qmath.h>
-
+#include <QBackingStore>
 QT_BEGIN_NAMESPACE
-
-class QQuickImageTextureProvider : public QSGTextureProvider
-{
-    Q_OBJECT
-public:
-    QQuickImageTextureProvider()
-        : m_texture(0)
-        , m_smooth(false)
-    {
-    }
-
-    void updateTexture(QSGTexture *texture) {
-        if (m_texture == texture)
-            return;
-        m_texture = texture;
-        emit textureChanged();
-    }
-
-    QSGTexture *texture() const {
-        if (m_texture) {
-            m_texture->setFiltering(m_smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-            m_texture->setMipmapFiltering(m_mipmap ? QSGTexture::Linear : QSGTexture::None);
-            m_texture->setHorizontalWrapMode(QSGTexture::ClampToEdge);
-            m_texture->setVerticalWrapMode(QSGTexture::ClampToEdge);
-        }
-        return m_texture;
-    }
-
-    friend class QQuickImage;
-
-    QSGTexture *m_texture;
-    bool m_smooth;
-    bool m_mipmap;
-};
-
-#include "qquickimage.moc"
+//#include "qquickimage.moc"
 
 QQuickImagePrivate::QQuickImagePrivate()
     : fillMode(QQuickImage::Stretch)
@@ -96,7 +59,6 @@ QQuickImagePrivate::QQuickImagePrivate()
     , mipmap(false)
     , hAlign(QQuickImage::AlignHCenter)
     , vAlign(QQuickImage::AlignVCenter)
-    , provider(0)
 {
 }
 
@@ -164,20 +126,20 @@ QQuickImage::QQuickImage(QQuickItem *parent)
 QQuickImage::QQuickImage(QQuickImagePrivate &dd, QQuickItem *parent)
     : QQuickImageBase(dd, parent)
 {
+    //TRY this
+    load();
 }
 
 QQuickImage::~QQuickImage()
 {
     Q_D(QQuickImage);
-    if (d->provider)
-        d->provider->deleteLater();
+    //TODO fixme
 }
 
 void QQuickImagePrivate::setImage(const QImage &image)
 {
     Q_Q(QQuickImage);
-    pix.setImage(image);
-
+    pix = QPixmap::fromImage(image);
     q->pixmapChange();
     status = pix.isNull() ? QQuickImageBase::Null : QQuickImageBase::Ready;
 
@@ -539,71 +501,32 @@ QRectF QQuickImage::boundingRect() const
     Q_D(const QQuickImage);
     return QRectF(0, 0, qMax(width(), d->paintedWidth), qMax(height(), d->paintedHeight));
 }
-
-QSGTextureProvider *QQuickImage::textureProvider() const
-{
-    Q_D(const QQuickImage);
-
-    if (!d->window || !d->sceneGraphRenderContext() || QThread::currentThread() != d->sceneGraphRenderContext()->thread()) {
-        qWarning("QQuickImage::textureProvider: can only be queried on the rendering thread of an exposed window");
-        return 0;
-    }
-
-    if (!d->provider) {
-        QQuickImagePrivate *dd = const_cast<QQuickImagePrivate *>(d);
-        dd->provider = new QQuickImageTextureProvider;
-        dd->provider->m_smooth = d->smooth;
-        dd->provider->m_mipmap = d->mipmap;
-        dd->provider->updateTexture(d->sceneGraphRenderContext()->textureForFactory(d->pix.textureFactory(), window()));
-    }
-
-    return d->provider;
-}
-
-QSGNode *QQuickImage::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
+void QQuickImage::updatePaintNode()
 {
     Q_D(QQuickImage);
+    load();
+    if (!d->pix.toImage().isNull())
+    {
+       setMimage(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage(),this);
+       setWidth(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).width());
+       setHeight(d->pix.scaled(QSize(d->pix.height()*scale(),d->pix.width()*scale())).height());
+   /*     QQuickWindow * win = window();
+        if(win)
+        {
+    win->beginPaint();
+if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+{
 
-    QSGTexture *texture = d->sceneGraphRenderContext()->textureForFactory(d->pix.textureFactory(), window());
-
-    // Copy over the current texture state into the texture provider...
-    if (d->provider) {
-        d->provider->m_smooth = d->smooth;
-        d->provider->m_mipmap = d->mipmap;
-        d->provider->updateTexture(texture);
+    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage());
+    win->endPaint();
+}
+}
+*/
     }
-
-    if (!texture || width() <= 0 || height() <= 0) {
-        delete oldNode;
-        return 0;
-    }
-
-    QSGImageNode *node = static_cast<QSGImageNode *>(oldNode);
-    if (!node) {
-        d->pixmapChanged = true;
-        node = d->sceneGraphContext()->createImageNode();
-    }
-
     QRectF targetRect;
     QRectF sourceRect;
-    QSGTexture::WrapMode hWrap = QSGTexture::ClampToEdge;
-    QSGTexture::WrapMode vWrap = QSGTexture::ClampToEdge;
-
-    qreal pixWidth = (d->fillMode == PreserveAspectFit) ? d->paintedWidth : d->pix.width() / d->devicePixelRatio;
-    qreal pixHeight = (d->fillMode == PreserveAspectFit) ? d->paintedHeight :  d->pix.height() / d->devicePixelRatio;
-
-    int xOffset = 0;
-    if (d->hAlign == QQuickImage::AlignHCenter)
-        xOffset = qCeil((width() - pixWidth) / 2.);
-    else if (d->hAlign == QQuickImage::AlignRight)
-        xOffset = qCeil(width() - pixWidth);
-
-    int yOffset = 0;
-    if (d->vAlign == QQuickImage::AlignVCenter)
-        yOffset = qCeil((height() - pixHeight) / 2.);
-    else if (d->vAlign == QQuickImage::AlignBottom)
-        yOffset = qCeil(height() - pixHeight);
-
+    //TODO not implemented
+/*
     switch (d->fillMode) {
     default:
     case Stretch:
@@ -687,8 +610,6 @@ QSGNode *QQuickImage::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
 
     if (d->pixmapChanged) {
-        // force update the texture in the node to trigger reconstruction of
-        // geometry and the likes when a atlas segment has changed.
         if (texture->isAtlasTexture() && (hWrap == QSGTexture::Repeat || vWrap == QSGTexture::Repeat || d->mipmap))
             node->setTexture(texture->removedFromAtlas());
         else
@@ -708,7 +629,7 @@ QSGNode *QQuickImage::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     node->setAntialiasing(d->antialiasing);
     node->update();
 
-    return node;
+    return node;*/
 }
 
 void QQuickImage::pixmapChange()
@@ -724,7 +645,7 @@ void QQuickImage::pixmapChange()
     d->pixmapChanged = true;
 
     // When the pixmap changes, such as being deleted, we need to update the textures
-    update();
+    //update();
 }
 
 QQuickImage::VAlignment QQuickImage::verticalAlignment() const

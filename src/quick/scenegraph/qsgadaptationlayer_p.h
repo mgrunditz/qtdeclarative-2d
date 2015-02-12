@@ -177,7 +177,8 @@ public:
     };
 
     struct Texture {
-        GLuint textureId;
+      //GLuint textureId;
+      int textureId;
         QSize size;
 
         Texture() : textureId(0), size(QSize()) { }
@@ -240,10 +241,12 @@ protected:
     void markGlyphsToRender(const QVector<glyph_t> &glyphs);
     inline void removeGlyph(glyph_t glyph);
 
-    void updateTexture(GLuint oldTex, GLuint newTex, const QSize &newTexSize);
+    //void updateTexture(GLuint oldTex, GLuint newTex, const QSize &newTexSize);
+    void updateTexture(int oldTex, int newTex, const QSize &newTexSize);
 
     inline bool containsGlyph(glyph_t glyph);
-    GLuint textureIdForGlyph(glyph_t glyph) const;
+    //GLuint textureIdForGlyph(glyph_t glyph) const;
+    int textureIdForGlyph(glyph_t glyph) const;
 
     GlyphData &glyphData(glyph_t glyph);
 

@@ -50,8 +50,8 @@
 #include <QtGui/private/qguiapplication_p.h>
 #include <qpa/qplatformintegration.h>
 
-#include <QtQuick/private/qsgtexture_p.h>
-#include <QtQuick/private/qsgcontext_p.h>
+//#include <QtQuick/private/qsgtexture_p.h>
+//#include <QtQuick/private/qsgcontext_p.h>
 
 #include <QCoreApplication>
 #include <QImageReader>
@@ -98,7 +98,7 @@ static inline QString imageId(const QUrl &url)
     return url.toString(QUrl::RemoveScheme | QUrl::RemoveAuthority).mid(1);
 }
 
-QQuickDefaultTextureFactory::QQuickDefaultTextureFactory(const QImage &image)
+/*QQuickDefaultTextureFactory::QQuickDefaultTextureFactory(const QImage &image)
 {
     if (image.format() == QImage::Format_ARGB32_Premultiplied
             || image.format() == QImage::Format_RGB32) {
@@ -107,22 +107,23 @@ QQuickDefaultTextureFactory::QQuickDefaultTextureFactory(const QImage &image)
         im = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     }
 }
-
-
+*/
+/*
 QSGTexture *QQuickDefaultTextureFactory::createTexture(QQuickWindow *) const
 {
     QSGPlainTexture *t = new QSGPlainTexture();
     t->setImage(im);
     return t;
 }
+*/
 
 static QQuickTextureFactory *textureFactoryForImage(const QImage &image)
 {
     if (image.isNull())
         return 0;
-    QQuickTextureFactory *texture = QSGContext::createTextureFactoryFromImage(image);
+      QQuickTextureFactory *texture = QSGContext::createTextureFactoryFromImage(image);
     if (texture)
-        return texture;
+      return texture;
     return new QQuickDefaultTextureFactory(image);
 }
 
@@ -147,14 +148,14 @@ public:
 
     class Event : public QEvent {
     public:
-        Event(ReadError, const QString &, const QSize &, QQuickTextureFactory *factory);
+        Event(ReadError, const QString &, const QSize &/*, QQuickTextureFactory *factory*/);
 
         ReadError error;
         QString errorString;
         QSize implicitSize;
-        QQuickTextureFactory *textureFactory;
+        //QQuickTextureFactory *textureFactory;
     };
-    void postReply(ReadError, const QString &, const QSize &, QQuickTextureFactory *factory);
+    void postReply(ReadError, const QString &, const QSize &/*, QQuickTextureFactory *factory*/);
 
 
 Q_SIGNALS:
@@ -249,7 +250,7 @@ public:
         declarativePixmaps.insert(pixmap);
     }
 
-    QQuickPixmapData(QQuickPixmap *pixmap, const QUrl &u, QQuickTextureFactory *texture, const QSize &s, const QSize &r)
+    /*QQuickPixmapData(QQuickPixmap *pixmap, const QUrl &u, QQuickTextureFactory *texture, const QSize &s, const QSize &r)
     : refCount(1), inCache(false), pixmapStatus(QQuickPixmap::Ready),
       url(u), implicitSize(s), requestSize(r), textureFactory(texture), reply(0), prevUnreferenced(0),
       prevUnreferencedPtr(0), nextUnreferenced(0)
@@ -266,7 +267,7 @@ public:
             requestSize = implicitSize = texture->textureSize();
         declarativePixmaps.insert(pixmap);
     }
-
+*/
     ~QQuickPixmapData()
     {
         while (!declarativePixmaps.isEmpty()) {
@@ -293,7 +294,7 @@ public:
     QSize implicitSize;
     QSize requestSize;
 
-    QQuickTextureFactory *textureFactory;
+    //QQuickTextureFactory *textureFactory;
 
     QIntrusiveList<QQuickPixmap, &QQuickPixmap::dataListNode> declarativePixmaps;
     QQuickPixmapReply *reply;
@@ -315,16 +316,16 @@ int QQuickPixmapReader::replyFinished = -1;
 int QQuickPixmapReader::downloadProgress = -1;
 int QQuickPixmapReader::threadNetworkRequestDone = -1;
 
-
+/*
 void QQuickPixmapReply::postReply(ReadError error, const QString &errorString,
                                         const QSize &implicitSize, QQuickTextureFactory *factory)
 {
     loading = false;
     QCoreApplication::postEvent(this, new Event(error, errorString, implicitSize, factory));
 }
-
-QQuickPixmapReply::Event::Event(ReadError e, const QString &s, const QSize &iSize, QQuickTextureFactory *factory)
-    : QEvent(QEvent::User), error(e), errorString(s), implicitSize(iSize), textureFactory(factory)
+*/
+QQuickPixmapReply::Event::Event(ReadError e, const QString &s, const QSize &iSize/*, QQuickTextureFactory *factory*/)
+    : QEvent(QEvent::User), error(e), errorString(s), implicitSize(iSize)/*, textureFactory(factory)*/
 {
 }
 
@@ -574,7 +575,7 @@ void QQuickPixmapReader::processJob(QQuickPixmapReply *runningJob, const QUrl &u
             if (!cancelled.contains(runningJob))
                 runningJob->postReply(errorCode, errorStr, readSize, textureFactoryForImage(pixmap.toImage()));
             mutex.unlock();
-        } else {
+        } else {/*
             QQuickTextureFactory *t = provider->requestTexture(imageId(url), &readSize, requestSize);
             QQuickPixmapReply::ReadError errorCode = QQuickPixmapReply::NoError;
             QString errorStr;
@@ -588,7 +589,7 @@ void QQuickPixmapReader::processJob(QQuickPixmapReply *runningJob, const QUrl &u
             else
                 delete t;
             mutex.unlock();
-
+*/
         }
 
     } else {
@@ -708,7 +709,7 @@ inline uint qHash(const QQuickPixmapKey &key)
     return qHash(*key.url) ^ key.size->width() ^ key.size->height();
 }
 
-class QSGContext;
+//class QSGContext;
 
 class QQuickPixmapStore : public QObject
 {

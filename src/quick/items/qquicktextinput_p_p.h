@@ -70,7 +70,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QQuickTextNode;
+//class QQuickTextNode;
 
 class Q_AUTOTEST_EXPORT QQuickTextInputPrivate : public QQuickImplicitSizeItemPrivate
 {
@@ -83,7 +83,6 @@ public:
         : hscroll(0)
         , vscroll(0)
         , cursorItem(0)
-        , textNode(0)
         , m_maskData(0)
         , color(QRgb(0xFF000000))
         , selectionColor(QRgb(0xFF000080))
@@ -205,7 +204,6 @@ public:
     QFont sourceFont;
 
     QQuickItem *cursorItem;
-    QQuickTextNode *textNode;
     MaskInputData *m_maskData;
 
     QList<int> m_transactions;

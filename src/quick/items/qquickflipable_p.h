@@ -47,7 +47,7 @@
 #include <QtGui/qtransform.h>
 #include <QtGui/qvector3d.h>
 #include <QtCore/qobject.h>
-
+#include <QMatrix4x4>
 QT_BEGIN_NAMESPACE
 
 class QQuickFlipablePrivate;

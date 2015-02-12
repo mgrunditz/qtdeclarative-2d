@@ -155,13 +155,14 @@ public:
 
     qreal radius() const;
     void setRadius(qreal radius);
-
+    QImage mimg;
 Q_SIGNALS:
     void colorChanged();
     void radiusChanged();
 
 protected:
-    virtual QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
+    //virtual QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
+    virtual void updatePaintNode();
 
 private Q_SLOTS:
     void doUpdate();

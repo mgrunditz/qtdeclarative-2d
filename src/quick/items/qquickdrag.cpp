@@ -51,7 +51,7 @@
 #include <QtGui/qevent.h>
 #include <QtGui/qstylehints.h>
 #include <QtGui/qguiapplication.h>
-
+#define FLT_MAX 1000000
 #ifndef QT_NO_DRAGANDDROP
 
 QT_BEGIN_NAMESPACE

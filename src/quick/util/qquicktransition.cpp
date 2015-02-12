@@ -149,7 +149,7 @@ void QQuickTransitionPrivate::append_animation(QQmlListProperty<QQuickAbstractAn
 {
     QQuickTransition *q = static_cast<QQuickTransition *>(list->object);
     q->d_func()->animations.append(a);
-    a->setDisableUserControl();
+    //a->setDisableUserControl();
 }
 
 int QQuickTransitionPrivate::animation_count(QQmlListProperty<QQuickAbstractAnimation> *list)
@@ -263,8 +263,8 @@ QQuickTransitionInstance *QQuickTransition::prepare(QQuickStateOperation::Action
     for (int i = start; i != end;) {
         anim = d->animations.at(i)->transition(actions, after, direction, defaultTarget);
         if (anim) {
-            if (d->animations.at(i)->threadingModel() == QQuickAbstractAnimation::RenderThread)
-                anim = new QQuickAnimatorProxyJob(anim, d->animations.at(i));
+           /* if (d->animations.at(i)->threadingModel() == QQuickAbstractAnimation::RenderThread)
+                anim = new QQuickAnimatorProxyJob(anim, d->animations.at(i));*/
             d->reversed ? group->prependAnimation(anim) : group->appendAnimation(anim);
         }
         d->reversed ? --i : ++i;

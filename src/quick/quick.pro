@@ -2,7 +2,9 @@ TARGET = QtQuick
 
 QT = core-private gui-private qml-private
 QT_PRIVATE =  network
-
+CFLAGS += -g
+CXXFLAGS += -g
+CPPFLAGS += -g
 DEFINES   += QT_NO_URL_CAST_FROM_STRING QT_NO_INTEGER_EVENT_COORDINATES
 win32-msvc*:DEFINES *= _CRT_SECURE_NO_WARNINGS
 solaris-cc*:QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -28,7 +30,7 @@ load(qt_module)
 include(util/util.pri)
 include(scenegraph/scenegraph.pri)
 include(items/items.pri)
-include(designer/designer.pri)
+#include(designer/designer.pri)
 
 HEADERS += \
     qtquickglobal.h \

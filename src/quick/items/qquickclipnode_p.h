@@ -43,9 +43,9 @@
 #define QQUICKCLIPNODE_P_H
 
 #include <private/qtquickglobal_p.h>
-#include <QtQuick/qsgnode.h>
+//#include <QtQuick/qsgnode.h>
 
-class Q_QUICK_PRIVATE_EXPORT QQuickDefaultClipNode : public QSGClipNode
+class Q_QUICK_PRIVATE_EXPORT QQuickDefaultClipNode //: public QSGClipNode
 {
 public:
     QQuickDefaultClipNode(const QRectF &);
@@ -66,7 +66,7 @@ private:
     uint m_dirty_geometry : 1;
     uint m_reserved : 31;
 
-    QSGGeometry m_geometry;
+    //    QSGGeometry m_geometry;
 };
 
 #endif // QQUICKCLIPNODE_P_H

@@ -75,8 +75,8 @@ public:
         mirror(false)
     {
     }
-
-    QQuickPixmap pix;
+    QPixmap pix;
+    //QQuickPixmap pix;
     QQuickImageBase::Status status;
     QUrl url;
     qreal progress;

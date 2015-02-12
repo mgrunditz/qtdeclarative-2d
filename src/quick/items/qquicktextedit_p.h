@@ -50,8 +50,6 @@ QT_BEGIN_NAMESPACE
 
 class QQuickTextDocument;
 class QQuickTextEditPrivate;
-class QTextBlock;
-
 class Q_QUICK_PRIVATE_EXPORT QQuickTextEdit : public QQuickImplicitSizeItem
 {
     Q_OBJECT
@@ -229,7 +227,6 @@ public:
 
 #ifndef QT_NO_IM
     QVariant inputMethodQuery(Qt::InputMethodQuery property) const;
-    Q_INVOKABLE QVariant inputMethodQuery(Qt::InputMethodQuery query, QVariant argument) const;
 #endif
 
     qreal contentWidth() const;
@@ -329,7 +326,6 @@ private Q_SLOTS:
     void createCursor();
     void q_canPasteChanged();
     void updateWholeDocument();
-    void invalidateBlock(const QTextBlock &block);
     void updateCursor();
     void q_updateAlignment();
     void updateSize();
@@ -361,7 +357,8 @@ protected:
 #ifndef QT_NO_IM
     void inputMethodEvent(QInputMethodEvent *e);
 #endif
-    QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *updatePaintNodeData);
+    //QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *updatePaintNodeData);
+    void updatePaintNode();
 
     friend class QQuickTextUtil;
     friend class QQuickTextDocument;

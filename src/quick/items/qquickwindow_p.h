@@ -57,15 +57,15 @@
 #include "qquickwindow.h"
 
 #include <QtQuick/private/qsgcontext_p.h>
-#include <private/qsgbatchrenderer_p.h>
+//#include <private/qsgbatchrenderer_p.h>
 
 #include <QtCore/qthread.h>
 #include <QtCore/qmutex.h>
 #include <QtCore/qwaitcondition.h>
 #include <private/qwindow_p.h>
-#include <private/qopengl_p.h>
-#include <qopenglcontext.h>
-#include <QtGui/qopenglframebufferobject.h>
+//#include <private/qopengl_p.h>
+//#include <qopenglcontext.h>
+//#include <QtGui/qopenglframebufferobject.h>
 #include <QtGui/qevent.h>
 
 QT_BEGIN_NAMESPACE
@@ -94,11 +94,13 @@ class QTouchEvent;
 class QQuickWindowRenderLoop;
 class QQuickWindowIncubationController;
 
-class Q_QUICK_PRIVATE_EXPORT QQuickWindowPrivate : public QWindowPrivate
+class /*Q_QUICK_PRIVATE_EXPORT*/ QQuickWindowPrivate : public QWindowPrivate
 {
 public:
     Q_DECLARE_PUBLIC(QQuickWindow)
 
+    QBackingStore *m_backingStore;	
+    QImage m_image;
     static inline QQuickWindowPrivate *get(QQuickWindow *c) { return c->d_func(); }
 
     QQuickWindowPrivate();
@@ -175,20 +177,20 @@ public:
     void updateFocusItemTransform();
 
     void dirtyItem(QQuickItem *);
-    void cleanup(QSGNode *);
+    //void cleanup(QSGNode *);
 
     void polishItems();
-    void syncSceneGraph();
+     void syncSceneGraph();
     void renderSceneGraph(const QSize &size);
 
     bool isRenderable() const;
 
     bool emitError(QQuickWindow::SceneGraphError error, const QString &msg);
 
-    QQuickItem::UpdatePaintNodeData updatePaintNodeData;
+    //QQuickItem::UpdatePaintNodeData updatePaintNodeData;
 
     QQuickItem *dirtyItemList;
-    QList<QSGNode *> cleanupNodeList;
+    //QList<QSGNode *> cleanupNodeList;
 
     QSet<QQuickItem *> itemsToPolish;
 
@@ -199,12 +201,12 @@ public:
     void updateEffectiveOpacityRoot(QQuickItem *, qreal);
     void updateDirtyNode(QQuickItem *);
 
-    void fireFrameSwapped() { Q_EMIT q_func()->frameSwapped(); }
-    void fireOpenGLContextCreated(QOpenGLContext *context) { Q_EMIT q_func()->openglContextCreated(context); }
-    void fireAboutToStop() { Q_EMIT q_func()->sceneGraphAboutToStop(); }
+    //void fireFrameSwapped() { Q_EMIT q_func()->frameSwapped(); }
+    //void fireOpenGLContextCreated(QOpenGLContext *context) { Q_EMIT q_func()->openglContextCreated(context); }
+    //void fireAboutToStop() { Q_EMIT q_func()->sceneGraphAboutToStop(); }
 
     QSGRenderContext *context;
-    QSGRenderer *renderer;
+    //QSGRenderer *renderer;
     QByteArray customRenderMode; // Default renderer supports "clip", "overdraw", "changes", "batches" and blank.
 
     QSGRenderLoop *windowManager;
@@ -223,7 +225,7 @@ public:
     uint lastWheelEventAccepted : 1;
     bool componentCompleted : 1;
 
-    QOpenGLFramebufferObject *renderTarget;
+    //QOpenGLFramebufferObject *renderTarget;
     uint renderTargetId;
     QSize renderTargetSize;
 
@@ -249,9 +251,11 @@ public:
 
 private:
     static void cleanupNodesOnShutdown(QQuickItem *);
+    int m_backgroundColorIndex;
+
 };
 
-class Q_QUICK_PRIVATE_EXPORT QQuickCloseEvent : public QObject
+class /*Q_QUICK_PRIVATE_EXPORT*/ QQuickCloseEvent : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool accepted READ isAccepted WRITE setAccepted)

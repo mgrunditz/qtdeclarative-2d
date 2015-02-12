@@ -66,8 +66,8 @@ Q_DECLARE_METATYPE(QKeySequence::StandardKey)
 void QQuickUtilModule::defineModule()
 {
 #ifndef QT_NO_IM
-    qmlRegisterUncreatableType<QInputMethod>("QtQuick",2,0,"InputMethod",
-                                             QInputMethod::tr("InputMethod is an abstract class"));
+    //qmlRegisterUncreatableType<QInputMethod>("QtQuick",2,0,"InputMethod",
+                                            // QInputMethod::tr("InputMethod is an abstract class"));
 #endif
     qmlRegisterUncreatableType<QQuickAbstractAnimation>("QtQuick",2,0,"Animation",QQuickAbstractAnimation::tr("Animation is an abstract class"));
 
@@ -91,7 +91,7 @@ void QQuickUtilModule::defineModule()
     qmlRegisterType<QQuickSystemPalette>("QtQuick",2,0,"SystemPalette");
     qmlRegisterType<QQuickTransition>("QtQuick",2,0,"Transition");
     qmlRegisterType<QQuickVector3dAnimation>("QtQuick",2,0,"Vector3dAnimation");
-
+//
     qmlRegisterUncreatableType<QQuickAnimator>("QtQuick", 2, 2, "Animator", QQuickAbstractAnimation::tr("Animator is an abstract class"));
     qmlRegisterType<QQuickXAnimator>("QtQuick", 2, 2, "XAnimator");
     qmlRegisterType<QQuickYAnimator>("QtQuick", 2, 2, "YAnimator");
@@ -104,6 +104,6 @@ void QQuickUtilModule::defineModule()
 
     qmlRegisterCustomType<QQuickPropertyChanges>("QtQuick",2,0,"PropertyChanges", new QQuickPropertyChangesParser);
 
-    qRegisterMetaType<QKeySequence::StandardKey>();
-    qmlRegisterUncreatableType<QKeySequence, 2>("QtQuick", 2, 2, "StandardKey", QStringLiteral("Cannot create an instance of StandardKey."));
+    //qRegisterMetaType<QKeySequence::StandardKey>();
+    //qmlRegisterUncreatableType<QKeySequence, 2>("QtQuick", 2, 2, "StandardKey", QStringLiteral("Cannot create an instance of StandardKey."));
 }

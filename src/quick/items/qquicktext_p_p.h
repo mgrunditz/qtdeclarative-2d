@@ -183,7 +183,7 @@ public:
     static inline QQuickTextPrivate *get(QQuickText *t) { return t->d_func(); }
 };
 
-class QQuickPixmap;
+//class QQuickPixmap;
 class QQuickTextDocumentWithImageResources : public QTextDocument, public QTextObjectInterface
 {
     Q_OBJECT
@@ -209,14 +209,14 @@ Q_SIGNALS:
 protected:
     QVariant loadResource(int type, const QUrl &name);
 
-    QQuickPixmap *loadPixmap(QQmlContext *context, const QUrl &name);
+    QPixmap *loadPixmap(QQmlContext *context, const QUrl &name);
 
 private Q_SLOTS:
     void reset();
     void requestFinished();
 
 private:
-    QHash<QUrl, QQuickPixmap *> m_resources;
+    QHash<QUrl, QPixmap *> m_resources;
 
     int outstanding;
     static QSet<QUrl> errors;

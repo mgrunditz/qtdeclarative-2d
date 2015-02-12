@@ -9,9 +9,9 @@ SUBDIRS += \
 qtHaveModule(quick) {
     SUBDIRS += \
         qtquick2 \
-        particles \
-        window \
-        testlib
+#        particles \
+        window 
+#        testlib
 }
 
 qtHaveModule(xmlpatterns) : SUBDIRS += xmllistmodel

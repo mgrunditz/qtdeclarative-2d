@@ -95,7 +95,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickText : public QQuickImplicitSizeItem
 public:
     QQuickText(QQuickItem *parent=0);
     ~QQuickText();
-
+    QImage m_image;
     enum HAlignment { AlignLeft = Qt::AlignLeft,
                        AlignRight = Qt::AlignRight,
                        AlignHCenter = Qt::AlignHCenter,
@@ -246,8 +246,8 @@ protected:
     virtual void itemChange(ItemChange change, const ItemChangeData &value);
     virtual void geometryChanged(const QRectF &newGeometry,
                                  const QRectF &oldGeometry);
-    virtual QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
-
+    //virtual QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
+    virtual void updatePaintNode();
     void updatePolish();
 
     void hoverEnterEvent(QHoverEvent *event);

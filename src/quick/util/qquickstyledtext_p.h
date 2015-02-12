@@ -41,12 +41,12 @@
 
 #ifndef QQUICKSTYLEDTEXT_H
 #define QQUICKSTYLEDTEXT_H
-
+#include <QPixmap>
 #include <QSize>
 #include <QPointF>
 #include <QList>
 #include <QUrl>
-#include <QtQuick/private/qquickpixmapcache_p.h>
+//#include <QtQuick/private/qquickpixmapcache_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -75,7 +75,7 @@ public:
     QSize size;
     int position;
     Align align;
-    QQuickPixmap *pix;
+    QPixmap *pix;
 };
 
 class Q_AUTOTEST_EXPORT QQuickStyledText

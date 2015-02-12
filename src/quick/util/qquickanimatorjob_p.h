@@ -61,7 +61,7 @@ class QQuickAnimatorController;
 class QQuickAnimatorProxyJobPrivate;
 class QQuickShaderEffectNode;
 
-class QSGOpacityNode;
+//class QSGOpacityNode;
 
 class Q_QUICK_PRIVATE_EXPORT QQuickAnimatorProxyJob : public QObject, public QAbstractAnimationJob
 {
@@ -173,7 +173,7 @@ public:
     {
         Helper()
             : ref(1)
-            , node(0)
+            //, node(0)
             , ox(0)
             , oy(0)
             , dx(0)
@@ -190,7 +190,7 @@ public:
 
         int ref;
         QQuickItem *item;
-        QSGTransformNode *node;
+        //QSGTransformNode *node;
 
         // Origin
         float ox;
@@ -263,7 +263,7 @@ public:
     void nodeWasDestroyed();
 
 private:
-    QSGOpacityNode *m_opacityNode;
+    //QSGOpacityNode *m_opacityNode;
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickUniformAnimatorJob : public QQuickAnimatorJob

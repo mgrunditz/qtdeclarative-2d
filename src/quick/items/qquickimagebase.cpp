@@ -163,7 +163,7 @@ void QQuickImageBase::setCache(bool cache)
 QImage QQuickImageBase::image() const
 {
     Q_D(const QQuickImageBase);
-    return d->pix.image();
+    return d->pix.toImage();
 }
 
 void QQuickImageBase::setMirror(bool mirror)
@@ -191,7 +191,7 @@ void QQuickImageBase::load()
     Q_D(QQuickImageBase);
 
     if (d->url.isEmpty()) {
-        d->pix.clear(this);
+        //d->pix.clear(this);
         if (d->progress != 0.0) {
             d->progress = 0.0;
             emit progressChanged(d->progress);
@@ -204,70 +204,26 @@ void QQuickImageBase::load()
             d->oldSourceSize = sourceSize();
             emit sourceSizeChanged();
         }
-        update();
 
     } else {
-        QQuickPixmap::Options options;
-        if (d->async)
-            options |= QQuickPixmap::Asynchronous;
-        if (d->cache)
-            options |= QQuickPixmap::Cache;
-        d->pix.clear(this);
 
         const qreal targetDevicePixelRatio = (window() ? window()->devicePixelRatio() : qApp->devicePixelRatio());
         d->devicePixelRatio = 1.0;
 
         QUrl loadUrl = d->url;
         resolve2xLocalFile(d->url, targetDevicePixelRatio, &loadUrl, &d->devicePixelRatio);
-        d->pix.load(qmlEngine(this), loadUrl, d->sourcesize * d->devicePixelRatio, options);
+       //TODO Need to support proper image paths
+        //qDebug() << "filename: " << d->url.fileName();
+        qDebug() << "filename: " << d->url.toString();
+		d->pix = QPixmap(d->url.toLocalFile());
+        setMimage(d->pix.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied),this);
 
-        if (d->pix.isLoading()) {
-            if (d->progress != 0.0) {
-                d->progress = 0.0;
-                emit progressChanged(d->progress);
-            }
-            if (d->status != Loading) {
-                d->status = Loading;
-                emit statusChanged(d->status);
-            }
-
-            static int thisRequestProgress = -1;
-            static int thisRequestFinished = -1;
-            if (thisRequestProgress == -1) {
-                thisRequestProgress =
-                    QQuickImageBase::staticMetaObject.indexOfSlot("requestProgress(qint64,qint64)");
-                thisRequestFinished =
-                    QQuickImageBase::staticMetaObject.indexOfSlot("requestFinished()");
-            }
-
-            d->pix.connectFinished(this, thisRequestFinished);
-            d->pix.connectDownloadProgress(this, thisRequestProgress);
-            update(); //pixmap may have invalidated texture, updatePaintNode needs to be called before the next repaint
-        } else {
-            requestFinished();
-        }
     }
 }
 
 void QQuickImageBase::requestFinished()
 {
     Q_D(QQuickImageBase);
-
-    if (d->pix.isError()) {
-        qmlInfo(this) << d->pix.error();
-        d->pix.clear(this);
-        d->status = Error;
-        if (d->progress != 0.0) {
-            d->progress = 0.0;
-            emit progressChanged(d->progress);
-        }
-    } else {
-        d->status = Ready;
-        if (d->progress != 1.0) {
-            d->progress = 1.0;
-            emit progressChanged(d->progress);
-        }
-    }
     pixmapChange();
     emit statusChanged(d->status);
     if (sourceSize() != d->oldSourceSize) {

@@ -52,8 +52,8 @@
 #include <QtQml/qqmlinfo.h>
 #include <QtGui/qevent.h>
 #include <QTextBoundaryFinder>
-#include "qquicktextnode_p.h"
-#include <QtQuick/qsgsimplerectnode.h>
+//#include "qquicktextnode_p.h"
+//#include <QtQuick/qsgsimplerectnode.h>
 
 #include <QtGui/qstylehints.h>
 #include <QtGui/qinputmethod.h>
@@ -1835,13 +1835,42 @@ void QQuickTextInput::triggerPreprocess()
     update();
 }
 
-QSGNode *QQuickTextInput::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
+//QSGNode *QQuickTextInput::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
+void QQuickTextInput::updatePaintNode()
 {
-    Q_UNUSED(data);
+    Q_D(QQuickTextInput);
+QVector <QTextLayout::FormatRange> fmtlist;
+QImage m_image;
+QTextLayout::FormatRange extrafmt;
+if (!d->m_text.isEmpty())
+{
+extrafmt.start = 0;
+extrafmt.length = length();
+extrafmt.format.setForeground(d->color);
+
+fmtlist.append(extrafmt);
+
+}
+   if (width()>0 && height()>0)
+{
+    if (m_image.isNull())
+    m_image = QImage(width(),height(),QImage::Format_RGB32);
+m_image.fill(0);
+QPainter p(&m_image);
+d->m_textLayout.draw(&p,QPoint(0,0),fmtlist);
+p.setBrush(color());
+p.drawRect(cursorRectangle().x(),cursorRectangle().y(),cursorRectangle().width(),cursorRectangle().height());
+p.end();
+	setMimage(m_image,this);
+}
+
+
+}
+  /*  Q_UNUSED(data);
     Q_D(QQuickTextInput);
 
     if (d->updateType != QQuickTextInputPrivate::UpdatePaintNode && oldNode != 0) {
-        // Update done in preprocess() in the nodes
+         Update done in preprocess() in the nodes
         d->updateType = QQuickTextInputPrivate::UpdateNone;
         return oldNode;
     }
@@ -1887,8 +1916,8 @@ QSGNode *QQuickTextInput::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData 
                                 QQuickText::Normal, QColor(), QColor(),
                                 d->selectionColor, d->selectedTextColor,
                                 d->selectionStart(),
-                                d->selectionEnd() - 1); // selectionEnd() returns first char after
-                                                                 // selection
+                                d->selectionEnd() - 1);  selectionEnd() returns first char after
+                                                                  selection
         }
 
         if (!isReadOnly() && d->cursorItem == 0) {
@@ -1905,7 +1934,7 @@ QSGNode *QQuickTextInput::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData 
 
     return node;
 }
-
+*/
 #ifndef QT_NO_IM
 QVariant QQuickTextInput::inputMethodQuery(Qt::InputMethodQuery property) const
 {
@@ -2652,14 +2681,14 @@ void QQuickTextInput::selectionChanged()
 
 void QQuickTextInputPrivate::showCursor()
 {
-    if (textNode != 0 && textNode->cursorNode() != 0)
-        textNode->cursorNode()->setColor(color);
+    //if (textNode != 0 && textNode->cursorNode() != 0)
+      //  textNode->cursorNode()->setColor(color);
 }
 
 void QQuickTextInputPrivate::hideCursor()
 {
-    if (textNode != 0 && textNode->cursorNode() != 0)
-        textNode->cursorNode()->setColor(QColor(0, 0, 0, 0));
+    //if (textNode != 0 && textNode->cursorNode() != 0)
+      //  textNode->cursorNode()->setColor(QColor(0, 0, 0, 0));
 }
 
 QRectF QQuickTextInput::boundingRect() const

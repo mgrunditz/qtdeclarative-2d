@@ -42,10 +42,11 @@
 #include "qquickrectangle_p.h"
 #include "qquickrectangle_p_p.h"
 
-#include <QtQuick/private/qsgcontext_p.h>
-#include <private/qsgadaptationlayer_p.h>
-
+//#include <QtQuick/private/qsgcontext_p.h>
+//#include <private/qsgadaptationlayer_p.h>
+#include <QBackingStore>
 #include <QtGui/qpixmapcache.h>
+#include <QPainter>
 #include <QtCore/qstringbuilder.h>
 #include <QtCore/qmath.h>
 #include <QtCore/qmetaobject.h>
@@ -325,11 +326,25 @@ QQuickRectangle::QQuickRectangle(QQuickItem *parent)
 : QQuickItem(*(new QQuickRectanglePrivate), parent)
 {
     setFlag(ItemHasContents);
+    updatePaintNode();
 }
 
 void QQuickRectangle::doUpdate()
 {
+    if((int)d_func()->width>0)
+    {
+   //TODO If global pixmap is used:
+   /* if (mimg.isNull())
+       mimg = QImage((int)d_func()->width,(int)d_func()->height, QImage::Format_ARGB32_Premultiplied);
+    mimg.fill(0);
+    QPainter p(&mimg);
+    p.setOpacity(1.0);
+    p.setBrush(QColor(255, 0, 0, 127));
+    p.drawRect(0,0,d_func()->width,d_func()->height);
+    setMimage(mimg,this);
+*/
     update();
+    }
 }
 
 /*!
@@ -468,49 +483,50 @@ void QQuickRectangle::setColor(const QColor &c)
     Q_D(QQuickRectangle);
     if (d->color == c)
         return;
-
     d->color = c;
-    update();
     emit colorChanged();
 }
 
-QSGNode *QQuickRectangle::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
+
+void QQuickRectangle::updatePaintNode()
 {
-    Q_UNUSED(data);
-    Q_D(QQuickRectangle);
-
-    if (width() <= 0 || height() <= 0
-            || (d->color.alpha() == 0 && (!d->pen || d->pen->width() == 0 || d->pen->color().alpha() == 0))) {
-        delete oldNode;
-        return 0;
-    }
-
-    QSGRectangleNode *rectangle = static_cast<QSGRectangleNode *>(oldNode);
-    if (!rectangle) rectangle = d->sceneGraphContext()->createRectangleNode();
-
-    rectangle->setRect(QRectF(0, 0, width(), height()));
-    rectangle->setColor(d->color);
-
-    if (d->pen && d->pen->isValid()) {
-        rectangle->setPenColor(d->pen->color());
-        rectangle->setPenWidth(d->pen->width());
-        rectangle->setAligned(d->pen->pixelAligned());
-    } else {
-        rectangle->setPenWidth(0);
-    }
-
-    rectangle->setRadius(d->radius);
-    rectangle->setAntialiasing(antialiasing());
-
-    QGradientStops stops;
-    if (d->gradient) {
-        stops = d->gradient->gradientStops();
-    }
-    rectangle->setGradientStops(stops);
-
-    rectangle->update();
-
-    return rectangle;
+  //TODO m_img is the potential global pixmap, not used here...
+    if ((int)d_func()->width>0 && (int)d_func()->height>0)
+    {
+/*	if (mimg.isNull())
+           mimg = QImage((int)d_func()->width,(int)d_func()->height, QImage::Format_ARGB32_Premultiplied);
+	mimg.fill(0);
+    if (!mimg.isNull())
+    {*/
+    QImage timg = QImage((int)d_func()->width,(int)d_func()->height, QImage::Format_ARGB32_Premultiplied);
+    if (!timg.isNull())
+    {
+    timg.fill(0);
+    QPainter p(&timg);
+    if (!p.isActive())
+    p.begin(&timg);
+        p.setOpacity(1.0);
+      p.setBrush(color());
+    p.drawRect(0,0,d_func()->width,d_func()->height);
+    p.end();
+    setMimage(timg,this);
+    /*QQuickWindow * win = window();
+	if(win)
+	{
+    win->beginPaint();
+if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+{
+    qDebug("drawpaint");
+    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), timg);
+    win->endPaint();
 }
+}*/
+    }
+    }
+   // }
+
+}
+
+
 
 QT_END_NAMESPACE

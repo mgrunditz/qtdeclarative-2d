@@ -58,7 +58,7 @@
 
 static void initResources()
 {
-    Q_INIT_RESOURCE(scenegraph);
+//    Q_INIT_RESOURCE(scenegraph);
 }
 
 QT_BEGIN_NAMESPACE

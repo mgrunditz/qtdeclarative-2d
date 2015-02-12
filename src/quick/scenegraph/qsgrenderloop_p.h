@@ -67,7 +67,7 @@ public:
     virtual void windowDestroyed(QQuickWindow *window) = 0;
 
     virtual void exposureChanged(QQuickWindow *window) = 0;
-    virtual QImage grab(QQuickWindow *window) = 0;
+//    virtual QImage grab(QQuickWindow *window) = 0;
 
     virtual void update(QQuickWindow *window) = 0;
     virtual void maybeUpdate(QQuickWindow *window) = 0;

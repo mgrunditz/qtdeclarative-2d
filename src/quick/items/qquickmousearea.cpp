@@ -1259,8 +1259,12 @@ QQuickDrag *QQuickMouseArea::drag()
     return d->drag;
 }
 #endif
+void QQuickMouseArea::updatePaintNode()
+{
 
-QSGNode *QQuickMouseArea::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
+
+}
+/*QSGNode *QQuickMouseArea::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
 {
     Q_UNUSED(data);
     Q_D(QQuickMouseArea);
@@ -1276,5 +1280,5 @@ QSGNode *QQuickMouseArea::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData 
     rectangle->update();
     return rectangle;
 }
-
+*/
 QT_END_NAMESPACE

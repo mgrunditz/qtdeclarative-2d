@@ -43,7 +43,7 @@
 #define QSGTHREADEDRENDERLOOP_P_H
 
 #include <QtCore/QThread>
-#include <QtGui/QOpenGLContext>
+//#include <QtGui/QOpenGLContext>
 #include <private/qsgcontext_p.h>
 
 #include "qsgrenderloop_p.h"

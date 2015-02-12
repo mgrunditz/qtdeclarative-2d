@@ -42,9 +42,9 @@
 #include "qsggeometry.h"
 #include "qsggeometry_p.h"
 
-#include <qopenglcontext.h>
-#include <qopenglfunctions.h>
-#include <private/qopenglextensions_p.h>
+//#include <qopenglcontext.h>
+//#include <qopenglfunctions.h>
+//#include <private/qopenglextensions_p.h>
 
 #ifdef Q_OS_QNX
 #include <malloc.h>
@@ -68,7 +68,7 @@ QSGGeometry::Attribute QSGGeometry::Attribute::create(int attributeIndex, int tu
 const QSGGeometry::AttributeSet &QSGGeometry::defaultAttributes_Point2D()
 {
     static Attribute data[] = {
-        QSGGeometry::Attribute::create(0, 2, GL_FLOAT, true)
+        QSGGeometry::Attribute::create(0, 2, float, true)
     };
     static AttributeSet attrs = { 1, sizeof(float) * 2, data };
     return attrs;
@@ -81,8 +81,8 @@ const QSGGeometry::AttributeSet &QSGGeometry::defaultAttributes_Point2D()
 const QSGGeometry::AttributeSet &QSGGeometry::defaultAttributes_TexturedPoint2D()
 {
     static Attribute data[] = {
-        QSGGeometry::Attribute::create(0, 2, GL_FLOAT, true),
-        QSGGeometry::Attribute::create(1, 2, GL_FLOAT)
+        QSGGeometry::Attribute::create(0, 2, float, true),
+        QSGGeometry::Attribute::create(1, 2, float)
     };
     static AttributeSet attrs = { 2, sizeof(float) * 4, data };
     return attrs;
@@ -95,8 +95,8 @@ const QSGGeometry::AttributeSet &QSGGeometry::defaultAttributes_TexturedPoint2D(
 const QSGGeometry::AttributeSet &QSGGeometry::defaultAttributes_ColoredPoint2D()
 {
     static Attribute data[] = {
-        QSGGeometry::Attribute::create(0, 2, GL_FLOAT, true),
-        QSGGeometry::Attribute::create(1, 4, GL_UNSIGNED_BYTE)
+        QSGGeometry::Attribute::create(0, 2, float, true),
+        QSGGeometry::Attribute::create(1, 4, unsigned char)
     };
     static AttributeSet attrs = { 2, 2 * sizeof(float) + 4 * sizeof(char), data };
     return attrs;
@@ -396,7 +396,7 @@ QSGGeometry::QSGGeometry(const QSGGeometry::AttributeSet &attributes,
                          int vertexCount,
                          int indexCount,
                          int indexType)
-    : m_drawing_mode(GL_TRIANGLE_STRIP)
+    : /*m_drawing_mode(GL_TRIANGLE_STRIP)*/
     , m_vertex_count(0)
     , m_index_count(0)
     , m_index_type(indexType)
@@ -413,7 +413,7 @@ QSGGeometry::QSGGeometry(const QSGGeometry::AttributeSet &attributes,
     Q_ASSERT(m_attributes.count > 0);
     Q_ASSERT(m_attributes.stride > 0);
 
-    Q_ASSERT_X(indexType != GL_UNSIGNED_INT
+   /* Q_ASSERT_X(indexType != unsigned int
                || static_cast<QOpenGLExtensions *>(QOpenGLContext::currentContext()->functions())
                   ->hasOpenGLExtension(QOpenGLExtensions::ElementIndexUint),
                "QSGGeometry::QSGGeometry",
@@ -424,7 +424,7 @@ QSGGeometry::QSGGeometry(const QSGGeometry::AttributeSet &attributes,
         && indexType != GL_UNSIGNED_SHORT
         && indexType != GL_UNSIGNED_INT) {
         qFatal("QSGGeometry: Unsupported index type, %x.\n", indexType);
-    }
+    }*/
 
 
     // Because allocate reads m_vertex_count, m_index_count and m_owns_data, these
@@ -522,10 +522,10 @@ const void *QSGGeometry::indexData() const
 
     The default value is \c GL_TRIANGLE_STRIP.
  */
-void QSGGeometry::setDrawingMode(GLenum mode)
+/*void QSGGeometry::setDrawingMode(GLenum mode)
 {
     m_drawing_mode = mode;
-}
+}*/
 
 /*!
     Gets the current line or point width or to be used for this geometry. This property
@@ -597,7 +597,7 @@ void QSGGeometry::allocate(int vertexCount, int indexCount)
         m_index_data_offset = -1;
         m_owns_data = false;
     } else {
-        Q_ASSERT(m_index_type == GL_UNSIGNED_INT || m_index_type == GL_UNSIGNED_SHORT);
+      //  Q_ASSERT(m_index_type == GL_UNSIGNED_INT || m_index_type == GL_UNSIGNED_SHORT);
         int indexByteSize = indexCount * (m_index_type == GL_UNSIGNED_SHORT ? sizeof(quint16) : sizeof(quint32));
         m_data = (void *) malloc(vertexByteSize + indexByteSize);
         m_index_data_offset = vertexByteSize;

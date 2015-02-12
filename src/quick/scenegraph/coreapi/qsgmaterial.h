@@ -97,7 +97,8 @@ public:
     virtual void updateState(const RenderState &state, QSGMaterial *newMaterial, QSGMaterial *oldMaterial);
     virtual char const *const *attributeNames() const = 0; // Array must end with null.
 
-    inline QOpenGLShaderProgram *program() { return &m_program; }
+    //inline QOpenGLShaderProgram *program() { return &m_program; }
+    inline int *program() { return &m_program; }
 
 protected:
     Q_DECLARE_PRIVATE(QSGMaterialShader)
@@ -116,7 +117,8 @@ protected:
     virtual const char *fragmentShader() const;
 
 private:
-    QOpenGLShaderProgram m_program;
+    //QOpenGLShaderProgram m_program;
+    int m_program;
     QScopedPointer<QSGMaterialShaderPrivate> d_ptr;
 };
 

@@ -43,7 +43,7 @@
 #define QQUICKIMAGE_P_H
 
 #include "qquickimagebase_p.h"
-#include <QtQuick/qsgtextureprovider.h>
+//#include <QtQuick/qsgtextureprovider.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -90,7 +90,7 @@ public:
     void setVerticalAlignment(VAlignment align);
 
     bool isTextureProvider() const { return true; }
-    QSGTextureProvider *textureProvider() const;
+ //   QSGTextureProvider *textureProvider() const;
 
     bool mipmap() const;
     void setMipmap(bool use);
@@ -108,7 +108,7 @@ protected:
     void updatePaintedGeometry();
 
     virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
-    virtual QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
+    virtual void updatePaintNode();
 
 private:
     Q_DISABLE_COPY(QQuickImage)

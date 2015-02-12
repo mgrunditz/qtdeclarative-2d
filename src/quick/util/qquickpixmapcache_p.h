@@ -55,8 +55,8 @@ QT_BEGIN_NAMESPACE
 
 class QQmlEngine;
 class QQuickPixmapData;
-class QQuickTextureFactory;
-
+//class QQuickTextureFactory;
+/*
 class QQuickDefaultTextureFactory : public QQuickTextureFactory
 {
     Q_OBJECT
@@ -70,7 +70,7 @@ public:
 private:
     QImage im;
 };
-
+*/
 class Q_QUICK_PRIVATE_EXPORT QQuickPixmap
 {
     Q_DECLARE_TR_FUNCTIONS(QQuickPixmap)
@@ -101,7 +101,7 @@ public:
     QImage image() const;
     void setImage(const QImage &);
 
-    QQuickTextureFactory *textureFactory() const;
+    //QQuickTextureFactory *textureFactory() const;
 
     QRect rect() const;
     int width() const;

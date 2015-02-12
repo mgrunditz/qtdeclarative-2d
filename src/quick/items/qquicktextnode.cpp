@@ -137,22 +137,15 @@ void QQuickTextNode::setStyleColor(const QColor &styleColor)
     m_styleColor = styleColor;
 }
 #endif
-
+/*
 QSGGlyphNode *QQuickTextNode::addGlyphs(const QPointF &position, const QGlyphRun &glyphs, const QColor &color,
                                      QQuickText::TextStyle style, const QColor &styleColor,
                                      QSGNode *parentNode)
 {
     QSGRenderContext *sg = QQuickItemPrivate::get(m_ownerElement)->sceneGraphRenderContext();
     QRawFont font = glyphs.rawFont();
-    bool preferNativeGlyphNode = m_useNativeRenderer;
-    if (!preferNativeGlyphNode) {
-        QRawFontPrivate *fontPriv = QRawFontPrivate::get(font);
-        if (fontPriv->fontEngine->hasUnreliableGlyphOutline())
-            preferNativeGlyphNode = true;
-        else
-            preferNativeGlyphNode = !QFontDatabase().isSmoothlyScalable(font.familyName(), font.styleName());
-    }
-
+    bool smoothScalable = QFontDatabase().isSmoothlyScalable(font.familyName(), font.styleName());
+    bool preferNativeGlyphNode = m_useNativeRenderer || !smoothScalable;
     QSGGlyphNode *node = sg->sceneGraphContext()->createGlyphNode(sg, preferNativeGlyphNode);
 
     node->setOwnerElement(m_ownerElement);
@@ -162,12 +155,12 @@ QSGGlyphNode *QQuickTextNode::addGlyphs(const QPointF &position, const QGlyphRun
     node->setColor(color);
     node->update();
 
-    /* We flag the geometry as static, but we never call markVertexDataDirty
+     We flag the geometry as static, but we never call markVertexDataDirty
        or markIndexDataDirty on them. This is because all text nodes are
        discarded when a change occurs. If we start appending/removing from
        existing geometry, then we also need to start marking the geometry as
        dirty.
-     */
+    
     node->geometry()->setIndexDataPattern(QSGGeometry::StaticPattern);
     node->geometry()->setVertexDataPattern(QSGGeometry::StaticPattern);
 
@@ -177,7 +170,7 @@ QSGGlyphNode *QQuickTextNode::addGlyphs(const QPointF &position, const QGlyphRun
 
     return node;
 }
-
+*/
 void QQuickTextNode::setCursor(const QRectF &rect, const QColor &color)
 {
     if (m_cursorNode != 0)
@@ -200,7 +193,7 @@ void QQuickTextNode::initEngine(const QColor& textColor, const QColor& selectedT
 
 void QQuickTextNode::addImage(const QRectF &rect, const QImage &image)
 {
-    QSGRenderContext *sg = QQuickItemPrivate::get(m_ownerElement)->sceneGraphRenderContext();
+   /* QSGRenderContext *sg = QQuickItemPrivate::get(m_ownerElement)->sceneGraphRenderContext();
     QSGImageNode *node = sg->sceneGraphContext()->createImageNode();
     QSGTexture *texture = sg->createTexture(image);
     m_textures.append(texture);
@@ -208,7 +201,7 @@ void QQuickTextNode::addImage(const QRectF &rect, const QImage &image)
     node->setInnerTargetRect(rect);
     node->setTexture(texture);
     appendChildNode(node);
-    node->update();
+    node->update();*/
 }
 
 void QQuickTextNode::addTextDocument(const QPointF &position, QTextDocument *textDocument,

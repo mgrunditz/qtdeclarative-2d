@@ -43,7 +43,7 @@
 #define QQUICKANIMATORCONTROLLER_P_H
 
 #include "qquickanimatorjob_p.h"
-#include <QtQuick/qsgnode.h>
+//#include <QtQuick/qsgnode.h>
 #include <QtQuick/qquickitem.h>
 
 #include <QtCore/qmutex.h>

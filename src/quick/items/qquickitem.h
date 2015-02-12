@@ -51,6 +51,7 @@
 #include <QtGui/qevent.h>
 #include <QtGui/qfont.h>
 #include <QtGui/qaccessible.h>
+#include <QImage>
 
 QT_BEGIN_NAMESPACE
 
@@ -89,11 +90,13 @@ class QQuickAnchors;
 class QQuickItemPrivate;
 class QQuickWindow;
 class QTouchEvent;
-class QSGNode;
-class QSGTransformNode;
-class QSGTextureProvider;
+// Remove scenegraph
 
-class Q_QUICK_EXPORT QQuickItem : public QObject, public QQmlParserStatus
+//class QSGNode;
+//class QSGTransformNode;
+//class QSGTextureProvider;
+
+class Q_QUICK_EXPORT QQuickItem :  public QObject, public QQmlParserStatus
 {
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)
@@ -152,6 +155,9 @@ class Q_QUICK_EXPORT QQuickItem : public QObject, public QQmlParserStatus
     Q_CLASSINFO("qt_HasQmlAccessors", "true")
 
 public:
+    QImage getMimage();
+    void updateFromWin(QRect dirtyRect);
+    void setMimage(QImage img,QQuickItem *it);
     enum Flag {
         ItemClipsChildrenToShape  = 0x01,
 #ifndef QT_NO_IM
@@ -332,8 +338,8 @@ public:
 #ifndef QT_NO_IM
     virtual QVariant inputMethodQuery(Qt::InputMethodQuery query) const;
 #endif
-
-    struct UpdatePaintNodeData {
+    // Remove scenegraph
+    /*struct UpdatePaintNodeData {
        QSGTransformNode *transformNode;
     private:
        friend class QQuickWindowPrivate;
@@ -342,7 +348,7 @@ public:
 
     virtual bool isTextureProvider() const;
     virtual QSGTextureProvider *textureProvider() const;
-
+    */
 public Q_SLOTS:
     void update();
 
@@ -425,8 +431,8 @@ protected:
 
     virtual void geometryChanged(const QRectF &newGeometry,
                                  const QRectF &oldGeometry);
-
-    virtual QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
+    // Remove scenegraph
+    virtual void updatePaintNode();
     virtual void releaseResources();
     virtual void updatePolish();
 

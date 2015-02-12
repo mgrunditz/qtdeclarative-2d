@@ -13,7 +13,7 @@ SOURCES += \
     $$PWD/qquickstategroup.cpp \
     $$PWD/qquicktransition.cpp \
     $$PWD/qquicktimeline.cpp \
-    $$PWD/qquickpixmapcache.cpp \
+#    $$PWD/qquickpixmapcache.cpp \
     $$PWD/qquickbehavior.cpp \
     $$PWD/qquickfontloader.cpp \
     $$PWD/qquickstyledtext.cpp \
@@ -46,7 +46,7 @@ HEADERS += \
     $$PWD/qquickstategroup_p.h \
     $$PWD/qquicktransition_p.h \
     $$PWD/qquicktimeline_p_p.h \
-    $$PWD/qquickpixmapcache_p.h \
+#    $$PWD/qquickpixmapcache_p.h \
     $$PWD/qquickbehavior_p.h \
     $$PWD/qquickfontloader_p.h \
     $$PWD/qquickstyledtext_p.h \
@@ -56,7 +56,7 @@ HEADERS += \
     $$PWD/qquickimageprovider.h \
     $$PWD/qquicksvgparser_p.h \
     $$PWD/qquickvaluetypes_p.h \
-    $$PWD/qquickanimator_p.h \
+   $$PWD/qquickanimator_p.h \
     $$PWD/qquickanimator_p_p.h \
     $$PWD/qquickanimatorjob_p.h \
     $$PWD/qquickanimatorcontroller_p.h \

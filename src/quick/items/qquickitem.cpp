@@ -59,7 +59,9 @@
 #include <QtCore/qcoreevent.h>
 #include <QtCore/qnumeric.h>
 #include <QtGui/qpa/qplatformtheme.h>
-
+#include <QtGui/QMatrix4x4>
+#include <QPainter>
+#include <QBackingStore>
 #include <private/qqmlglobal_p.h>
 #include <private/qqmlengine_p.h>
 #include <QtQuick/private/qquickstategroup_p.h>
@@ -82,11 +84,11 @@
 // XXX todo Check that elements that create items handle memory correctly after visual ownership change
 
 QT_BEGIN_NAMESPACE
-
+/*
 #ifndef QT_NO_DEBUG
 static bool qsg_leak_check = !qgetenv("QML_LEAK_CHECK").isEmpty();
 #endif
-
+*/
 #ifdef FOCUS_DEBUG
 void printFocusTree(QQuickItem *item, QQuickItem *scope = 0, int depth = 1);
 void printFocusTree(QQuickItem *item, QQuickItem *scope, int depth)
@@ -2041,6 +2043,16 @@ QQuickItem::QQuickItem(QQuickItem* parent)
     d->init(parent);
 }
 
+QImage QQuickItem::getMimage()
+{
+	 QQuickItemPrivate * pit= QQuickItemPrivate::get(this);
+	return pit->m_image;
+}
+void QQuickItem::setMimage(QImage img,QQuickItem *it)
+{
+	QQuickItemPrivate * pit= QQuickItemPrivate::get(it);
+        pit->m_image = img;
+}
 /*! \internal
 */
 QQuickItem::QQuickItem(QQuickItemPrivate &dd, QQuickItem *parent)
@@ -2055,7 +2067,7 @@ static int qt_item_count = 0;
 
 static void qt_print_item_count()
 {
-    qDebug("Number of leaked items: %i", qt_item_count);
+    //qDebug("Number of leaked items: %i", qt_item_count);
     qt_item_count = -1;
 }
 #endif
@@ -2065,14 +2077,16 @@ static void qt_print_item_count()
 */
 QQuickItem::~QQuickItem()
 {
+  // Remove scenegraph
+  /*
 #ifndef QT_NO_DEBUG
     if (qsg_leak_check) {
         --qt_item_count;
         if (qt_item_count < 0)
-            qDebug("Item destroyed after qt_print_item_count() was called.");
+            //qDebug("Item destroyed after qt_print_item_count() was called.");
     }
 #endif
-
+  */
     Q_D(QQuickItem);
 
     if (d->windowRefCount > 1)
@@ -2264,12 +2278,12 @@ QQuickItem* QQuickItemPrivate::nextPrevItemInTabFocusChain(QQuickItem *item, boo
             // wrapped around, avoid endless loops
             if (originalItem == contentItem) {
 #ifdef FOCUS_DEBUG
-                qDebug() << "QQuickItemPrivate::nextPrevItemInTabFocusChain: looped, return contentItem";
+                //qDebug() << "QQuickItemPrivate::nextPrevItemInTabFocusChain: looped, return contentItem";
 #endif
                 return item->window()->contentItem();
             } else {
 #ifdef FOCUS_DEBUG
-                qDebug() << "QQuickItemPrivate::nextPrevItemInTabFocusChain: looped, return " << startItem;
+                //qDebug() << "QQuickItemPrivate::nextPrevItemInTabFocusChain: looped, return " << startItem;
 #endif
                 return startItem;
             }
@@ -2667,24 +2681,24 @@ void QQuickItemPrivate::derefWindow()
     }
 #endif
     c->hoverItems.removeAll(q);
-    if (itemNodeInstance)
+    /*if (itemNodeInstance)
         c->cleanup(itemNodeInstance);
     if (!parentItem)
         c->parentlessItems.remove(q);
-
+	*/
     window = 0;
 
-    itemNodeInstance = 0;
-
+    //itemNodeInstance = 0;
+/*
     if (extra.isAllocated()) {
         extra->opacityNode = 0;
         extra->clipNode = 0;
         extra->rootNode = 0;
         extra->beforePaintNode = 0;
     }
-
-    groupNode = 0;
-    paintNode = 0;
+*/
+    //groupNode = 0;
+    //paintNode = 0;
 
     for (int ii = 0; ii < childItems.count(); ++ii) {
         QQuickItem *child = childItems.at(ii);
@@ -2807,9 +2821,9 @@ QQuickItemPrivate::QQuickItemPrivate()
     , implicitWidth(0)
     , implicitHeight(0)
     , baselineOffset(0)
-    , itemNodeInstance(0)
-    , groupNode(0)
-    , paintNode(0)
+    //, itemNodeInstance(0)
+    //, groupNode(0)
+    //, paintNode(0)
 {
 }
 
@@ -2821,6 +2835,7 @@ QQuickItemPrivate::~QQuickItemPrivate()
 
 void QQuickItemPrivate::init(QQuickItem *parent)
 {
+  /*
 #ifndef QT_NO_DEBUG
     if (qsg_leak_check) {
         ++qt_item_count;
@@ -2831,7 +2846,7 @@ void QQuickItemPrivate::init(QQuickItem *parent)
         }
     }
 #endif
-
+  */
     Q_Q(QQuickItem);
 
     registerAccessorProperties();
@@ -2843,6 +2858,9 @@ void QQuickItemPrivate::init(QQuickItem *parent)
         QQuickItemPrivate *parentPrivate = QQuickItemPrivate::get(parent);
         setImplicitLayoutMirror(parentPrivate->inheritedLayoutMirror, parentPrivate->inheritMirrorFromParent);
     }
+	//qDebug("QQuickitem private init");
+	m_image = QImage(width,height, QImage::Format_ARGB32_Premultiplied);
+        m_image.fill(0);
 }
 
 void QQuickItemPrivate::data_append(QQmlListProperty<QObject> *prop, QObject *o)
@@ -3346,10 +3364,14 @@ void QQuickItem::setClip(bool c)
 void QQuickItem::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     Q_D(QQuickItem);
-
-    if (d->_anchors)
+      //internal image dies here 
+ if (d->m_image.isNull())
+{
+     d->m_image = QImage(newGeometry.width(), newGeometry.height(), QImage::Format_ARGB32_Premultiplied);
+	d->m_image.fill(0);
+} 
+   if (d->_anchors)
         QQuickAnchorsPrivate::get(d->_anchors)->updateMe();
-
     bool xChange = (newGeometry.x() != oldGeometry.x());
     bool yChange = (newGeometry.y() != oldGeometry.y());
     bool widthChange = (newGeometry.width() != oldGeometry.width());
@@ -3433,11 +3455,8 @@ void QQuickItem::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeo
     QSGFlatColorMaterial, QSGTextureMaterial, QSGNode::markDirty()
  */
 
-QSGNode *QQuickItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *updatePaintNodeData)
+void QQuickItem::updatePaintNode()
 {
-    Q_UNUSED(updatePaintNodeData)
-    delete oldNode;
-    return 0;
 }
 
 /*!
@@ -3456,12 +3475,12 @@ QSGNode *QQuickItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *upda
 void QQuickItem::releaseResources()
 {
 }
-
+/*
 QSGTransformNode *QQuickItemPrivate::createTransformNode()
 {
     return new QSGTransformNode;
 }
-
+*/
 /*!
     This function should perform any layout as required for this item.
 
@@ -3918,17 +3937,52 @@ void QQuickItem::setBaselineOffset(qreal offset)
  * Only items which specifies QQuickItem::ItemHasContents are allowed
  * to call QQuickItem::update().
  */
+void QQuickItem::updateFromWin(QRect dirtyRect)
+{
+    Q_D(QQuickItem);
+  QQuickWindow * win;
+        win = NULL;
+// TODO Item can only be updated if it has a window
+    if (window())
+        win = window();
+if (win)
+{
+    QRect rect(QPoint(0,0),win->geometry().size());
+    //updatePaintNode();
+
+    // Painting to the window backbuffer , transformed to screen coordinates
+
+    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->m_image);
+}
+win=0;
+}
 void QQuickItem::update()
 {
     Q_D(QQuickItem);
+    qDebug("UPDATE!!");
+//TODO This does nothing at the moment , updating is only caused by renderSceneGraph in QQuickWindow.
     if (!(flags() & ItemHasContents)) {
 #ifndef QT_NO_DEBUG
         qWarning() << metaObject()->className() << ": Update called for a item without content";
 #endif
         return;
     }
-    d->dirty(QQuickItemPrivate::Content);
+	d->dirty(QQuickItemPrivate::Content);
+     //if(window())
+     //QQuickWindowPrivate::get(window())->renderSceneGraph(QSize(640,480));
+/*     QQuickWindow * win = window();
+        if(win)
+        {
+    win->beginPaint();
+if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+{
+
+    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->m_image);
+    win->endPaint();
 }
+}
+*/
+} 
 
 /*!
     Schedules a polish event for this item.
@@ -5428,17 +5482,44 @@ QString QQuickItemPrivate::dirtyToString() const
 void QQuickItemPrivate::dirty(DirtyType type)
 {
     Q_Q(QQuickItem);
+    
     if (type & (TransformOrigin | Transform | BasicTransform | Position | Size))
+    {
         transformChanged();
-
+    }
     if (!(dirtyAttributes & type) || (window && !prevDirtyItem)) {
         dirtyAttributes |= type;
         if (window && componentComplete) {
             addToDirtyList();
             QQuickWindowPrivate::get(window)->dirtyItem(q);
+	    q->updatePaintNode();
+        }
+    }
+    
+}
+
+void QQuickItemPrivate::dirty_win(DirtyType type)
+{
+    Q_Q(QQuickItem);
+   //Part of experimental dirtyArea implementation , not used.
+//      p.drawImage(0,0,m_image);
+//      p.end();
+    if (type & (TransformOrigin | Transform | BasicTransform | Position | Size))
+    {
+        transformChanged();
+        //q->updateFromWin();updatePaintNode();
+    }
+    if (!(dirtyAttributes & type) || (window && !prevDirtyItem)) {
+        dirtyAttributes |= type;
+        if (window && componentComplete) {
+            addToDirtyList();
+            QQuickWindowPrivate::get(window)->dirtyItem(q);
+            //q->updateFromWin();updatePaintNode();
         }
     }
 }
+
+
 
 void QQuickItemPrivate::addToDirtyList()
 {
@@ -6206,7 +6287,6 @@ void QQuickItem::setSize(const QSizeF &size)
     d->width = size.width();
 
     d->dirty(QQuickItemPrivate::Size);
-
     geometryChanged(QRectF(x(), y(), width(), height()),
                     QRectF(x(), y(), oldWidth, oldHeight));
 }
@@ -7060,8 +7140,9 @@ bool QQuickItem::event(QEvent *ev)
         break;
     case QEvent::StyleAnimationUpdate:
         if (isVisible()) {
+	    //qDebug("StyleAnimation");
             ev->accept();
-            update();
+            //update();
         }
         break;
     case QEvent::HoverEnter:
@@ -7147,13 +7228,13 @@ QDebug operator<<(QDebug debug, QQuickItem *item)
     This function can be called from any thread.
  */
 
-bool QQuickItem::isTextureProvider() const
+/*bool QQuickItem::isTextureProvider() const
 {
     Q_D(const QQuickItem);
     return d->extra.isAllocated() && d->extra->layer && d->extra->layer->effectSource() ?
            d->extra->layer->effectSource()->isTextureProvider() : false;
 }
-
+*/
 /*!
     \fn QSGTextureProvider *QQuickItem::textureProvider() const
 
@@ -7162,14 +7243,14 @@ bool QQuickItem::isTextureProvider() const
 
     This function may only be called on the rendering thread.
  */
-
+/*
 QSGTextureProvider *QQuickItem::textureProvider() const
 {
     Q_D(const QQuickItem);
     return d->extra.isAllocated() && d->extra->layer && d->extra->layer->effectSource() ?
            d->extra->layer->effectSource()->textureProvider() : 0;
 }
-
+*/
 /*!
     \property QQuickItem::layer
     \internal
@@ -7190,18 +7271,18 @@ QQuickItemLayer::QQuickItemLayer(QQuickItem *item)
     , m_mipmap(false)
     , m_smooth(false)
     , m_componentComplete(true)
-    , m_wrapMode(QQuickShaderEffectSource::ClampToEdge)
-    , m_format(QQuickShaderEffectSource::RGBA)
+    //, m_wrapMode(QQuickShaderEffectSource::ClampToEdge)
+    //, m_format(QQuickShaderEffectSource::RGBA)
     , m_name("source")
     , m_effectComponent(0)
     , m_effect(0)
-    , m_effectSource(0)
+    //, m_effectSource(0)
 {
 }
 
 QQuickItemLayer::~QQuickItemLayer()
 {
-    delete m_effectSource;
+    //delete m_effectSource;
     delete m_effect;
 }
 
@@ -7234,7 +7315,7 @@ void QQuickItemLayer::setEnabled(bool e)
 
 void QQuickItemLayer::classBegin()
 {
-    Q_ASSERT(!m_effectSource);
+    //Q_ASSERT(!m_effectSource);
     Q_ASSERT(!m_effect);
     m_componentComplete = false;
 }
@@ -7249,11 +7330,11 @@ void QQuickItemLayer::componentComplete()
 
 void QQuickItemLayer::activate()
 {
-    Q_ASSERT(!m_effectSource);
-    m_effectSource = new QQuickShaderEffectSource();
+    //Q_ASSERT(!m_effectSource);
+    //m_effectSource = new QQuickShaderEffectSource();
 
     QQuickItem *parentItem = m_item->parentItem();
-    if (parentItem) {
+    /*if (parentItem) {
         m_effectSource->setParentItem(parentItem);
         m_effectSource->stackAfter(m_item);
     }
@@ -7266,11 +7347,11 @@ void QQuickItemLayer::activate()
     m_effectSource->setMipmap(m_mipmap);
     m_effectSource->setWrapMode(m_wrapMode);
     m_effectSource->setFormat(m_format);
-
+*/
     if (m_effectComponent)
         activateEffect();
 
-    m_effectSource->setVisible(m_item->isVisible() && !m_effect);
+ //   m_effectSource->setVisible(m_item->isVisible() && !m_effect);
 
     updateZ();
     updateGeometry();
@@ -7283,13 +7364,13 @@ void QQuickItemLayer::activate()
 
 void QQuickItemLayer::deactivate()
 {
-    Q_ASSERT(m_effectSource);
+  //  Q_ASSERT(m_effectSource);
 
     if (m_effectComponent)
         deactivateEffect();
 
-    delete m_effectSource;
-    m_effectSource = 0;
+    //delete m_effectSource;
+    //m_effectSource = 0;
 
     QQuickItemPrivate *id = QQuickItemPrivate::get(m_item);
     id->removeItemChangeListener(this,  QQuickItemPrivate::Geometry | QQuickItemPrivate::Opacity | QQuickItemPrivate::Parent | QQuickItemPrivate::Visibility | QQuickItemPrivate::SiblingOrder);
@@ -7297,7 +7378,7 @@ void QQuickItemLayer::deactivate()
 
 void QQuickItemLayer::activateEffect()
 {
-    Q_ASSERT(m_effectSource);
+    //Q_ASSERT(m_effectSource);
     Q_ASSERT(m_effectComponent);
     Q_ASSERT(!m_effect);
 
@@ -7312,16 +7393,16 @@ void QQuickItemLayer::activateEffect()
     QQuickItem *parentItem = m_item->parentItem();
     if (parentItem) {
         m_effect->setParentItem(parentItem);
-        m_effect->stackAfter(m_effectSource);
+        //m_effect->stackAfter(m_effectSource);
     }
     m_effect->setVisible(m_item->isVisible());
-    m_effect->setProperty(m_name, qVariantFromValue<QObject *>(m_effectSource));
+    //m_effect->setProperty(m_name, qVariantFromValue<QObject *>(m_effectSource));
     m_effectComponent->completeCreate();
 }
 
 void QQuickItemLayer::deactivateEffect()
 {
-    Q_ASSERT(m_effectSource);
+    //Q_ASSERT(m_effectSource);
     Q_ASSERT(m_effectComponent);
 
     delete m_effect;
@@ -7346,24 +7427,24 @@ void QQuickItemLayer::setEffect(QQmlComponent *component)
         return;
 
     bool updateNeeded = false;
-    if (m_effectSource && m_effectComponent) {
+    /*if (m_effectSource && m_effectComponent) {
         deactivateEffect();
         updateNeeded = true;
     }
-
+*/
     m_effectComponent = component;
-
+/*
     if (m_effectSource && m_effectComponent) {
         activateEffect();
         updateNeeded = true;
     }
-
+*/
     if (updateNeeded) {
         updateZ();
         updateGeometry();
         updateOpacity();
         updateMatrix();
-        m_effectSource->setVisible(m_item->isVisible() && !m_effect);
+        //m_effectSource->setVisible(m_item->isVisible() && !m_effect);
     }
 
     emit effectChanged(component);
@@ -7385,9 +7466,9 @@ void QQuickItemLayer::setMipmap(bool mipmap)
         return;
     m_mipmap = mipmap;
 
-    if (m_effectSource)
+/*    if (m_effectSource)
         m_effectSource->setMipmap(m_mipmap);
-
+*/
     emit mipmapChanged(mipmap);
 }
 
@@ -7408,7 +7489,7 @@ void QQuickItemLayer::setMipmap(bool mipmap)
 
     \note Some OpenGL implementations do not support the GL_ALPHA format.
  */
-
+/*
 void QQuickItemLayer::setFormat(QQuickShaderEffectSource::Format f)
 {
     if (f == m_format)
@@ -7420,7 +7501,7 @@ void QQuickItemLayer::setFormat(QQuickShaderEffectSource::Format f)
 
     emit formatChanged(m_format);
 }
-
+*/
 
 /*!
     \qmlproperty rect QtQuick::Item::layer.sourceRect
@@ -7436,10 +7517,10 @@ void QQuickItemLayer::setSourceRect(const QRectF &sourceRect)
     if (sourceRect == m_sourceRect)
         return;
     m_sourceRect = sourceRect;
-
+/*
     if (m_effectSource)
         m_effectSource->setSourceRect(m_sourceRect);
-
+*/
     emit sourceRectChanged(sourceRect);
 }
 
@@ -7454,10 +7535,10 @@ void QQuickItemLayer::setSmooth(bool s)
     if (m_smooth == s)
         return;
     m_smooth = s;
-
+/*
     if (m_effectSource)
         m_effectSource->setSmooth(m_smooth);
-
+*/
     emit smoothChanged(s);
 }
 
@@ -7477,10 +7558,10 @@ void QQuickItemLayer::setSize(const QSize &size)
     if (size == m_size)
         return;
     m_size = size;
-
+/*
     if (m_effectSource)
         m_effectSource->setTextureSize(size);
-
+*/
     emit sizeChanged(size);
 }
 
@@ -7501,7 +7582,7 @@ void QQuickItemLayer::setSize(const QSize &size)
     \note Some OpenGL ES 2 implementations do not support the GL_REPEAT
     wrap mode with non-power-of-two textures.
  */
-
+/*
 void QQuickItemLayer::setWrapMode(QQuickShaderEffectSource::WrapMode mode)
 {
     if (mode == m_wrapMode)
@@ -7513,7 +7594,7 @@ void QQuickItemLayer::setWrapMode(QQuickShaderEffectSource::WrapMode mode)
 
     emit wrapModeChanged(mode);
 }
-
+*/
 /*!
     \qmlproperty string QtQuick::Item::layer.samplerName
 
@@ -7530,7 +7611,7 @@ void QQuickItemLayer::setName(const QByteArray &name) {
         return;
     if (m_effect) {
         m_effect->setProperty(m_name, QVariant());
-        m_effect->setProperty(name, qVariantFromValue<QObject *>(m_effectSource));
+    //    m_effect->setProperty(name, qVariantFromValue<QObject *>(m_effectSource));
     }
     m_name = name;
     emit nameChanged(name);
@@ -7551,59 +7632,65 @@ void QQuickItemLayer::itemParentChanged(QQuickItem *item, QQuickItem *parent)
 {
     Q_UNUSED(item)
     Q_ASSERT(item == m_item);
-    Q_ASSERT(parent != m_effectSource);
+    //Q_ASSERT(parent != m_effectSource);
     Q_ASSERT(parent == 0 || parent != m_effect);
 
-    m_effectSource->setParentItem(parent);
+    /*m_effectSource->setParentItem(parent);
     if (parent)
         m_effectSource->stackAfter(m_item);
-
+*/
     if (m_effect) {
         m_effect->setParentItem(parent);
-        if (parent)
+      /*  if (parent)
             m_effect->stackAfter(m_effectSource);
-    }
+    	*/
+	}
 }
 
 void QQuickItemLayer::itemSiblingOrderChanged(QQuickItem *)
 {
-    m_effectSource->stackAfter(m_item);
+    /*m_effectSource->stackAfter(m_item);
     if (m_effect)
         m_effect->stackAfter(m_effectSource);
+	*/
 }
 
 void QQuickItemLayer::itemVisibilityChanged(QQuickItem *)
 {
-    QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
+    /*QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
     Q_ASSERT(l);
     l->setVisible(m_item->isVisible());
+	*/
 }
 
 void QQuickItemLayer::updateZ()
 {
     if (!m_componentComplete || !m_enabled)
         return;
-    QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
+    /*QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
     Q_ASSERT(l);
     l->setZ(m_item->z());
+*/
 }
 
 void QQuickItemLayer::updateOpacity()
 {
-    QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
+    /*QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
     Q_ASSERT(l);
     l->setOpacity(m_item->opacity());
+*/
 }
 
 void QQuickItemLayer::updateGeometry()
 {
-    QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
+    /*QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
     Q_ASSERT(l);
     QRectF bounds = m_item->clipRect();
     l->setWidth(bounds.width());
     l->setHeight(bounds.height());
     l->setX(bounds.x() + m_item->x());
     l->setY(bounds.y() + m_item->y());
+	*/
 }
 
 void QQuickItemLayer::updateMatrix()
@@ -7612,7 +7699,7 @@ void QQuickItemLayer::updateMatrix()
     // checks.
     if (!m_componentComplete || !m_enabled)
         return;
-    QQuickItem *l = m_effect ? (QQuickItem *) m_effect : (QQuickItem *) m_effectSource;
+    QQuickItem *l = /*m_effect ?*/ (QQuickItem *) m_effect;// : (QQuickItem *) m_effectSource;
     Q_ASSERT(l);
     QQuickItemPrivate *ld = QQuickItemPrivate::get(l);
     l->setScale(m_item->scale());
@@ -7621,7 +7708,9 @@ void QQuickItemLayer::updateMatrix()
     if (ld->origin() != QQuickItemPrivate::get(m_item)->origin())
         ld->extra.value().origin = QQuickItemPrivate::get(m_item)->origin();
     ld->dirty(QQuickItemPrivate::Transform);
+
 }
+
 
 QQuickItemPrivate::ExtraData::ExtraData()
 : z(0), scale(1), rotation(0), opacity(1),
@@ -7631,8 +7720,11 @@ QQuickItemPrivate::ExtraData::ExtraData()
   numItemsWithCursor(0),
 #endif
   effectRefCount(0), hideRefCount(0),
-  opacityNode(0), clipNode(0), rootNode(0), beforePaintNode(0),
-  acceptedMouseButtons(0), origin(QQuickItem::Center)
+//  opacityNode(0)
+ clipNode(0)
+//, rootNode(0)
+//, beforePaintNode(0),
+  ,acceptedMouseButtons(0), origin(QQuickItem::Center)
 {
 }
 

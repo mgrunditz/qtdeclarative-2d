@@ -102,7 +102,7 @@ QT_BEGIN_NAMESPACE
 
     \note PropertyChanges can be used to change anchor margins, but not other anchor
     values; use AnchorChanges for this instead. Similarly, to change an \l Item's
-    \l {Item::}{parent} value, use ParentChange instead.
+    \l {Item::}{parent} value, use ParentChanges instead.
 
 
     \section2 Resetting property values

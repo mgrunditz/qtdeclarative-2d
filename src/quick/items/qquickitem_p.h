@@ -61,7 +61,7 @@
 
 #include "qquickwindow_p.h"
 
-#include <QtQuick/qsgnode.h>
+//#include <QtQuick/qsgnode.h>
 #include "qquickclipnode_p.h"
 
 #include <private/qpodvector_p.h>
@@ -77,9 +77,9 @@
 #include <QtCore/qlist.h>
 #include <QtCore/qdebug.h>
 #include <QtCore/qelapsedtimer.h>
-
-#include <QtQuick/private/qquickshadereffectsource_p.h>
-#include <QtQuick/private/qquickshadereffect_p.h>
+#include <QImage>
+//#include <QtQuick/private/qquickshadereffectsource_p.h>
+//#include <QtQuick/private/qquickshadereffect_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -146,8 +146,8 @@ class QQuickItemLayer : public QObject, public QQuickItemChangeListener
     Q_PROPERTY(QRectF sourceRect READ sourceRect WRITE setSourceRect NOTIFY sourceRectChanged)
     Q_PROPERTY(bool mipmap READ mipmap WRITE setMipmap NOTIFY mipmapChanged)
     Q_PROPERTY(bool smooth READ smooth WRITE setSmooth NOTIFY smoothChanged)
-    Q_PROPERTY(QQuickShaderEffectSource::WrapMode wrapMode READ wrapMode WRITE setWrapMode NOTIFY wrapModeChanged)
-    Q_PROPERTY(QQuickShaderEffectSource::Format format READ format WRITE setFormat NOTIFY formatChanged)
+    //Q_PROPERTY(QQuickShaderEffectSource::WrapMode wrapMode READ wrapMode WRITE setWrapMode NOTIFY wrapModeChanged)
+    //Q_PROPERTY(QQuickShaderEffectSource::Format format READ format WRITE setFormat NOTIFY formatChanged)
     Q_PROPERTY(QByteArray samplerName READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QQmlComponent *effect READ effect WRITE setEffect NOTIFY effectChanged)
 public:
@@ -169,14 +169,14 @@ public:
     QSize size() const { return m_size; }
     void setSize(const QSize &size);
 
-    QQuickShaderEffectSource::Format format() const { return m_format; }
-    void setFormat(QQuickShaderEffectSource::Format f);
+    //QQuickShaderEffectSource::Format format() const { return m_format; }
+    //void setFormat(QQuickShaderEffectSource::Format f);
 
     QRectF sourceRect() const { return m_sourceRect; }
     void setSourceRect(const QRectF &sourceRect);
 
-    QQuickShaderEffectSource::WrapMode wrapMode() const { return m_wrapMode; }
-    void setWrapMode(QQuickShaderEffectSource::WrapMode mode);
+    //QQuickShaderEffectSource::WrapMode wrapMode() const { return m_wrapMode; }
+    //void setWrapMode(QQuickShaderEffectSource::WrapMode mode);
 
     QByteArray name() const { return m_name; }
     void setName(const QByteArray &name);
@@ -184,7 +184,7 @@ public:
     QQmlComponent *effect() const { return m_effectComponent; }
     void setEffect(QQmlComponent *effect);
 
-    QQuickShaderEffectSource *effectSource() const { return m_effectSource; }
+    //QQuickShaderEffectSource *effectSource() const { return m_effectSource; }
 
     void itemGeometryChanged(QQuickItem *, const QRectF &, const QRectF &);
     void itemOpacityChanged(QQuickItem *);
@@ -201,11 +201,11 @@ Q_SIGNALS:
     void enabledChanged(bool enabled);
     void sizeChanged(const QSize &size);
     void mipmapChanged(bool mipmap);
-    void wrapModeChanged(QQuickShaderEffectSource::WrapMode mode);
+    //void wrapModeChanged(QQuickShaderEffectSource::WrapMode mode);
     void nameChanged(const QByteArray &name);
     void effectChanged(QQmlComponent *component);
     void smoothChanged(bool smooth);
-    void formatChanged(QQuickShaderEffectSource::Format format);
+    //void formatChanged(QQuickShaderEffectSource::Format format);
     void sourceRectChanged(const QRectF &sourceRect);
 
 private:
@@ -222,14 +222,14 @@ private:
     bool m_mipmap;
     bool m_smooth;
     bool m_componentComplete;
-    QQuickShaderEffectSource::WrapMode m_wrapMode;
-    QQuickShaderEffectSource::Format m_format;
+    //QQuickShaderEffectSource::WrapMode m_wrapMode;
+    //QQuickShaderEffectSource::Format m_format;
     QSize m_size;
     QRectF m_sourceRect;
     QByteArray m_name;
     QQmlComponent *m_effectComponent;
     QQuickItem *m_effect;
-    QQuickShaderEffectSource *m_effectSource;
+    //QQuickShaderEffectSource *m_effectSource;
 };
 
 class Q_QUICK_PRIVATE_EXPORT QQuickItemPrivate : public QObjectPrivate
@@ -239,7 +239,7 @@ class Q_QUICK_PRIVATE_EXPORT QQuickItemPrivate : public QObjectPrivate
 public:
     static QQuickItemPrivate* get(QQuickItem *item) { return item->d_func(); }
     static const QQuickItemPrivate* get(const QQuickItem *item) { return item->d_func(); }
-
+    QImage  m_image;
     static void registerAccessorProperties();
 
     QQuickItemPrivate();
@@ -356,10 +356,10 @@ public:
         int effectRefCount;
         int hideRefCount;
 
-        QSGOpacityNode *opacityNode;
+        //QSGOpacityNode *opacityNode;
         QQuickDefaultClipNode *clipNode;
-        QSGRootNode *rootNode;
-        QSGNode *beforePaintNode;
+        //QSGRootNode *rootNode;
+        //QSGNode *beforePaintNode;
 
         // Although acceptedMouseButtons is inside ExtraData, we actually store
         // the LeftButton flag in the extra.flag() bit.  This is because it is
@@ -460,6 +460,7 @@ public:
     quint32 dirtyAttributes;
     QString dirtyToString() const;
     void dirty(DirtyType);
+    void dirty_win(DirtyType);
     void addToDirtyList();
     void removeFromDirtyList();
     QQuickItem *nextDirtyItem;
@@ -469,8 +470,8 @@ public:
 
     QQuickWindow *window;
     int windowRefCount;
-    inline QSGContext *sceneGraphContext() const;
-    inline QSGRenderContext *sceneGraphRenderContext() const;
+    //inline QSGContext *sceneGraphContext() const;
+    //inline QSGRenderContext *sceneGraphRenderContext() const;
 
     QQuickItem *parentItem;
     QQmlNotifier parentNotifier;
@@ -551,8 +552,8 @@ public:
     void setEffectiveEnableRecur(QQuickItem *scope, bool);
 
 
-    inline QSGTransformNode *itemNode();
-    inline QSGNode *childContainerNode();
+    //inline QSGTransformNode *itemNode();
+    //inline QSGNode *childContainerNode();
 
     /*
       QSGNode order is:
@@ -563,15 +564,15 @@ public:
          - groupNode
      */
 
-    QSGOpacityNode *opacityNode() const { return extra.isAllocated()?extra->opacityNode:0; }
-    QQuickDefaultClipNode *clipNode() const { return extra.isAllocated()?extra->clipNode:0; }
-    QSGRootNode *rootNode() const { return extra.isAllocated()?extra->rootNode:0; }
+    //QSGOpacityNode *opacityNode() const { return extra.isAllocated()?extra->opacityNode:0; }
+    //QQuickDefaultClipNode *clipNode() const { return extra.isAllocated()?extra->clipNode:0; }
+    //QSGRootNode *rootNode() const { return extra.isAllocated()?extra->rootNode:0; }
 
-    QSGTransformNode *itemNodeInstance;
-    QSGNode *groupNode;
-    QSGNode *paintNode;
+    //QSGTransformNode *itemNodeInstance;
+    //QSGNode *groupNode;
+    //QSGNode *paintNode;
 
-    virtual QSGTransformNode *createTransformNode();
+    //virtual QSGTransformNode *createTransformNode();
 
     // A reference from an effect item means that this item is used by the effect, so
     // it should insert a root node.
@@ -835,7 +836,7 @@ Qt::MouseButtons QQuickItemPrivate::acceptedMouseButtons() const
             (extra.isAllocated() ? extra->acceptedMouseButtons : Qt::MouseButtons(0)));
 }
 
-QSGContext *QQuickItemPrivate::sceneGraphContext() const
+/*QSGContext *QQuickItemPrivate::sceneGraphContext() const
 {
     Q_ASSERT(window);
     return static_cast<QQuickWindowPrivate *>(QObjectPrivate::get(window))->context->sceneGraphContext();
@@ -846,7 +847,7 @@ QSGRenderContext *QQuickItemPrivate::sceneGraphRenderContext() const
     Q_ASSERT(window);
     return static_cast<QQuickWindowPrivate *>(QObjectPrivate::get(window))->context;
 }
-
+*/
 void QQuickItemPrivate::markSortedChildrenDirty(QQuickItem *child)
 {
     // If sortedChildItems == &childItems then all in childItems have z == 0
@@ -862,7 +863,7 @@ QQuickItem::TransformOrigin QQuickItemPrivate::origin() const
 {
     return extra.isAllocated()?extra->origin:QQuickItem::Center;
 }
-
+/*
 QSGTransformNode *QQuickItemPrivate::itemNode()
 {
     if (!itemNodeInstance) {
@@ -894,7 +895,7 @@ QSGNode *QQuickItemPrivate::childContainerNode()
     }
     return groupNode;
 }
-
+*/
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQuickItemPrivate::ChangeTypes)
 
 QT_END_NAMESPACE

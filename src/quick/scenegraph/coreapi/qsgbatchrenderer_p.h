@@ -144,7 +144,8 @@ inline QDebug operator << (QDebug d, const Rect &r) {
 }
 
 struct Buffer {
-    GLuint id;
+  //GLuint id;
+    int id;
     int size;
     char *data;
 };
@@ -394,8 +395,10 @@ public:
     QHash<QSGMaterialType *, Shader *> rewrittenShaders;
     QHash<QSGMaterialType *, Shader *> stockShaders;
 
-    QOpenGLShaderProgram *blitProgram;
-    QOpenGLShaderProgram *visualizeProgram;
+    //QOpenGLShaderProgram *blitProgram;
+    void  *blitProgram;
+    //QOpenGLShaderProgram *visualizeProgram;
+    void *visualizeProgram;
     QSGRenderContext *context;
 };
 
@@ -502,7 +505,8 @@ private:
     int m_renderOrderRebuildLower;
     int m_renderOrderRebuildUpper;
 
-    GLuint m_bufferStrategy;
+    //GLuint m_bufferStrategy;
+    int m_bufferStrategy;
     int m_batchNodeThreshold;
     int m_batchVertexThreshold;
 

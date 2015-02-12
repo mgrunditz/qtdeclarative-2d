@@ -41,16 +41,12 @@
 
 #include "qquicktext_p.h"
 #include "qquicktext_p_p.h"
-
-#include <QtQuick/private/qsgcontext_p.h>
+#define FLT_MAX 100000000
 #include <private/qqmlglobal_p.h>
-#include <private/qsgadaptationlayer_p.h>
-#include "qquicktextnode_p.h"
 #include "qquickimage_p_p.h"
 #include "qquicktextutil_p.h"
 
-#include <QtQuick/private/qsgtexture_p.h>
-
+#include <QBackingStore>
 #include <QtQml/qqmlinfo.h>
 #include <QtGui/qevent.h>
 #include <QtGui/qabstracttextdocumentlayout.h>
@@ -108,6 +104,7 @@ void QQuickTextPrivate::init()
     Q_Q(QQuickText);
     q->setAcceptedMouseButtons(Qt::LeftButton);
     q->setFlag(QQuickItem::ItemHasContents);
+    m_image = QImage(width,height,QImage::Format_ARGB32_Premultiplied);
 }
 
 QQuickTextDocumentWithImageResources::QQuickTextDocumentWithImageResources(QQuickItem *parent)
@@ -129,8 +126,9 @@ QVariant QQuickTextDocumentWithImageResources::loadResource(int type, const QUrl
     QQmlContext *context = qmlContext(parent());
 
     if (type == QTextDocument::ImageResource) {
-        QQuickPixmap *p = loadPixmap(context, name);
-        return p->image();
+        //QQuickPixmap *p = loadPixmap(context, name);
+        QPixmap *p = loadPixmap(context, name);
+        return p->toImage();
     }
 
     return QTextDocument::loadResource(type, name);
@@ -161,15 +159,8 @@ QSizeF QQuickTextDocumentWithImageResources::intrinsicSize(
             QQmlContext *context = qmlContext(parent());
             QUrl url = baseUrl().resolved(QUrl(imageFormat.name()));
 
-            QQuickPixmap *p = loadPixmap(context, url);
-            if (!p->isReady()) {
-                if (!hasWidth)
-                    size.setWidth(16);
-                if (!hasHeight)
-                    size.setHeight(16);
-                return size;
-            }
-            QSize implicitSize = p->implicitSize();
+            QPixmap *p = loadPixmap(context, url);
+            QSize implicitSize = p->size();
 
             if (!hasWidth) {
                 if (!hasHeight)
@@ -199,8 +190,8 @@ QImage QQuickTextDocumentWithImageResources::image(const QTextImageFormat &forma
     QQmlContext *context = qmlContext(parent());
     QUrl url = baseUrl().resolved(QUrl(format.name()));
 
-    QQuickPixmap *p = loadPixmap(context, url);
-    return p->image();
+    QPixmap *p = loadPixmap(context, url);
+    return p->toImage();
 }
 
 void QQuickTextDocumentWithImageResources::reset()
@@ -209,36 +200,25 @@ void QQuickTextDocumentWithImageResources::reset()
     markContentsDirty(0, characterCount());
 }
 
-QQuickPixmap *QQuickTextDocumentWithImageResources::loadPixmap(
+QPixmap *QQuickTextDocumentWithImageResources::loadPixmap(
         QQmlContext *context, const QUrl &url)
 {
 
-    QHash<QUrl, QQuickPixmap *>::Iterator iter = m_resources.find(url);
+    QHash<QUrl, QPixmap *>::Iterator iter = m_resources.find(url);
 
     if (iter == m_resources.end()) {
-        QQuickPixmap *p = new QQuickPixmap(context->engine(), url);
+        //TODO fix paths
+        QPixmap *p = new QPixmap(url.fileName());//toLocalFile());
         iter = m_resources.insert(url, p);
 
-        if (p->isLoading()) {
-            p->connectFinished(this, SLOT(requestFinished()));
-            outstanding++;
-        }
     }
 
-    QQuickPixmap *p = *iter;
-    if (p->isError()) {
-        if (!errors.contains(url)) {
-            errors.insert(url);
-            qmlInfo(parent()) << p->error();
-        }
-    }
+    QPixmap *p = *iter;
     return p;
 }
 
 void QQuickTextDocumentWithImageResources::clearResources()
 {
-    foreach (QQuickPixmap *pixmap, m_resources)
-        pixmap->clear(this);
     qDeleteAll(m_resources);
     m_resources.clear();
     outstanding = 0;
@@ -380,7 +360,7 @@ void QQuickText::imageDownloadFinished()
         bool needToUpdateLayout = false;
         foreach (QQuickStyledTextImgTag *img, d->visibleImgTags) {
             if (!img->size.isValid()) {
-                img->size = img->pix->implicitSize();
+                img->size = img->pix->size();
                 needToUpdateLayout = true;
             }
         }
@@ -1130,22 +1110,22 @@ void QQuickTextPrivate::setLineGeometry(QTextLine &line, qreal lineWidth, qreal 
 
             if (!image->pix) {
                 QUrl url = q->baseUrl().resolved(image->url);
-                image->pix = new QQuickPixmap(qmlEngine(q), url, image->size);
-                if (image->pix->isLoading()) {
+                image->pix = new QPixmap(url.toLocalFile());//fileName());
+                /*if (image->pix->isLoading()) {
                     image->pix->connectFinished(q, SLOT(imageDownloadFinished()));
                     if (!extra.isAllocated() || !extra->nbActiveDownloads)
                         extra.value().nbActiveDownloads = 0;
                     extra->nbActiveDownloads++;
-                } else if (image->pix->isReady()) {
+                } else if (image->pix->isReady()) {*/
                     if (!image->size.isValid()) {
-                        image->size = image->pix->implicitSize();
+                        image->size = image->pix->size();
                         // if the size of the image was not explicitly set, we need to
                         // call updateLayout() once again.
                         needToUpdateLayout = true;
                     }
-                } else if (image->pix->isError()) {
+                /*} else if (image->pix->isError()) {
                     qmlInfo(q) << image->pix->error();
-                }
+                }*/
             }
 
             qreal ih = qreal(image->size.height());
@@ -1499,6 +1479,8 @@ void QQuickText::setText(const QString &n)
     d->updateLayout();
     setAcceptHoverEvents(d->richText || d->styledText);
     emit textChanged(d->text);
+    // QQuickWindowPrivate::get(window())->renderSceneGraph(window()->size());
+    updatePaintNode();
 }
 
 /*!
@@ -2186,6 +2168,7 @@ void QQuickText::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeo
 
 geomChangeDone:
     QQuickItem::geometryChanged(newGeometry, oldGeometry);
+    m_image = QImage(width(),height(),QImage::Format_ARGB32_Premultiplied);
 }
 
 void QQuickText::triggerPreprocess()
@@ -2196,67 +2179,49 @@ void QQuickText::triggerPreprocess()
     update();
 }
 
-QSGNode *QQuickText::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
+void QQuickText::updatePaintNode()
 {
-    Q_UNUSED(data);
     Q_D(QQuickText);
+qDebug("QQuickText::updatePaintNode");
+QVector <QTextLayout::FormatRange> fmtlist;
 
-    if (d->text.isEmpty()) {
-        delete oldNode;
-        return 0;
-    }
+QTextLayout::FormatRange extrafmt;
+if (!d->text.isEmpty())
+{
+extrafmt.start = 0;
+extrafmt.length = d->text.length();
+extrafmt.format.setForeground(QColor::fromRgba(d->color));
 
-    if (d->updateType != QQuickTextPrivate::UpdatePaintNode && oldNode != 0) {
-        // Update done in preprocess() in the nodes
-        d->updateType = QQuickTextPrivate::UpdateNone;
-        return oldNode;
-    }
+fmtlist.append(extrafmt);
 
-    d->updateType = QQuickTextPrivate::UpdateNone;
+}
+   if (width()>0 && height()>0)
+{
+    //if (m_image.isNull())
+    m_image = QImage(width(),height()+10,QImage::Format_ARGB32_Premultiplied);
+m_image.fill(0);
+QPainter p(&m_image);
+d->layout.draw(&p,QPoint(0,0),fmtlist);
+setMimage(m_image,this);
+QQuickWindow * win = window();
+        if(win)
+        {
+    //win->beginPaint();
+    if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+{
+    QPainter pnter (QQuickWindowPrivate::get(win)->m_backingStore->paintDevice());
+    pnter.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->m_image);
+    //win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), m_image);
+    QQuickWindowPrivate::get(win)->m_backingStore->flush(QRect((int)mapToItem(window()->contentItem(),QPoint(0,0)).x(),(int) mapToItem(window()->contentItem(),QPoint(0,0)).y(),d->width,d->height));
+    //win->endPaint();
+}
+}
 
-    const qreal dy = QQuickTextUtil::alignedY(d->layedOutTextRect.height(), height(), d->vAlign);
-
-    QQuickTextNode *node = 0;
-    if (!oldNode)
-        node = new QQuickTextNode(this);
-    else
-        node = static_cast<QQuickTextNode *>(oldNode);
-
-    node->setUseNativeRenderer(d->renderType == NativeRendering);
-    node->deleteContent();
-    node->setMatrix(QMatrix4x4());
-
-    const QColor color = QColor::fromRgba(d->color);
-    const QColor styleColor = QColor::fromRgba(d->styleColor);
-    const QColor linkColor = QColor::fromRgba(d->linkColor);
-
-    if (d->richText) {
-        const qreal dx = QQuickTextUtil::alignedX(d->layedOutTextRect.width(), width(), effectiveHAlign());
-        d->ensureDoc();
-        node->addTextDocument(QPointF(dx, dy), d->extra->doc, color, d->style, styleColor, linkColor);
-    } else if (d->layedOutTextRect.width() > 0) {
-        const qreal dx = QQuickTextUtil::alignedX(d->lineWidth, width(), effectiveHAlign());
-        int unelidedLineCount = d->lineCount;
-        if (d->elideLayout)
-            unelidedLineCount -= 1;
-        if (unelidedLineCount > 0) {
-            node->addTextLayout(
-                        QPointF(dx, dy),
-                        &d->layout,
-                        color, d->style, styleColor, linkColor,
-                        QColor(), QColor(), -1, -1,
-                        0, unelidedLineCount);
-        }
-        if (d->elideLayout)
-            node->addTextLayout(QPointF(dx, dy), d->elideLayout, color, d->style, styleColor, linkColor);
-
-        foreach (QQuickStyledTextImgTag *img, d->visibleImgTags) {
-            QQuickPixmap *pix = img->pix;
-            if (pix && pix->isReady())
-                node->addImage(QRectF(img->pos.x() + dx, img->pos.y() + dy, pix->width(), pix->height()), pix->image());
-        }
-    }
-    return node;
+     //if(QQuickWindowPrivate::get(window())->contentItem()->isComponentComplete())
+     //if(window()->contentItem()->isVisible())
+     //QQuickWindowPrivate::get(window())->renderSceneGraph(window()->size());
+//update();
+}
 }
 
 void QQuickText::updatePolish()
@@ -2361,7 +2326,7 @@ void QQuickText::setLineHeightMode(LineHeightMode mode)
     within the width of the item without wrapping is used.
     \li Text.VerticalFit - The largest size up to the size specified that fits
     the height of the item is used.
-    \li Text.Fit - The largest size up to the size specified that fits within the
+    \li Text.Fit - The largest size up to the size specified the fits within the
     width and height of the item is used.
     \endlist
 

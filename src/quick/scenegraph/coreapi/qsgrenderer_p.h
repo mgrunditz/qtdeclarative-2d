@@ -64,7 +64,7 @@ class TextureReference;
 class QSGBindable;
 class QSGNodeUpdater;
 
-class Q_QUICK_PRIVATE_EXPORT QSGRenderer : public QObject, public QOpenGLFunctions
+class Q_QUICK_PRIVATE_EXPORT QSGRenderer : public QObject//, public QOpenGLFunctions
 {
     Q_OBJECT
 public:
@@ -176,7 +176,8 @@ private:
     QSet<QSGNode *> m_nodes_to_preprocess;
 
     QMatrix4x4 m_projection_matrix;
-    QOpenGLShaderProgram m_clip_program;
+    //QOpenGLShaderProgram m_clip_program;
+    int m_clip_program;
     int m_clip_matrix_id;
 
     const QSGBindable *m_bindable;
@@ -212,10 +213,12 @@ private:
 class QSGBindableFboId : public QSGBindable
 {
 public:
-    QSGBindableFboId(GLuint);
+  //QSGBindableFboId(GLuint);
+    QSGBindableFboId(int);
     virtual void bind() const;
 private:
-    GLuint m_id;
+    //GLuint m_id;
+    int m_id;
 };
 
 

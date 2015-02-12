@@ -45,10 +45,9 @@
 #include "qquickanimator_p_p.h"
 #include <private/qquickwindow_p.h>
 #include <private/qquickitem_p.h>
-#include <private/qquickshadereffectnode_p.h>
 
 #include <private/qanimationgroupjob_p.h>
-
+#include <QMatrix4x4>
 #include <qcoreapplication.h>
 
 QT_BEGIN_NAMESPACE
@@ -141,6 +140,7 @@ void QQuickAnimatorProxyJob::updateState(QAbstractAnimationJob::State newState, 
 
 void QQuickAnimatorProxyJob::windowChanged(QQuickWindow *window)
 {
+	qDebug("4");
     setWindow(window);
 }
 
@@ -163,11 +163,8 @@ void QQuickAnimatorProxyJob::setWindow(QQuickWindow *window)
 
     } else if (!m_controller && m_job) {
         m_controller = QQuickWindowPrivate::get(window)->animationController;
-        if (window->openglContext())
             readyToAnimate();
-        else
-            connect(window, SIGNAL(sceneGraphInitialized()), this, SLOT(sceneGraphInitialized()));
-    }
+}
 }
 
 void QQuickAnimatorProxyJob::sceneGraphInitialized()
@@ -291,8 +288,8 @@ void QQuickTransformAnimatorJob::initialize(QQuickAnimatorController *controller
 
 void QQuickTransformAnimatorJob::nodeWasDestroyed()
 {
-    if (m_helper)
-        m_helper->node = 0;
+    //if (m_helper)
+    //    m_helper->node = 0;
 }
 
 void QQuickTransformAnimatorJob::Helper::sync()
@@ -301,13 +298,8 @@ void QQuickTransformAnimatorJob::Helper::sync()
             | QQuickItemPrivate::BasicTransform
             | QQuickItemPrivate::TransformOrigin
             | QQuickItemPrivate::Size;
-
+   qDebug("animation sync");
     QQuickItemPrivate *d = QQuickItemPrivate::get(item);
-    if (d->extra.isAllocated()
-            && d->extra->layer
-            && d->extra->layer->enabled()) {
-        d = QQuickItemPrivate::get(d->extra->layer->m_effectSource);
-    }
 
     quint32 dirty = mask & d->dirtyAttributes;
 
@@ -319,7 +311,6 @@ void QQuickTransformAnimatorJob::Helper::sync()
     if (dirty == 0)
         return;
 
-    node = d->itemNode();
 
     if (dirty & QQuickItemPrivate::Position) {
         dx = item->x();
@@ -340,8 +331,8 @@ void QQuickTransformAnimatorJob::Helper::sync()
 
 void QQuickTransformAnimatorJob::Helper::apply()
 {
-    if (!wasChanged || !node)
-        return;
+    //if (!wasChanged || !node)
+    //    return;
 
     QMatrix4x4 m;
     m.translate(dx, dy);
@@ -349,7 +340,6 @@ void QQuickTransformAnimatorJob::Helper::apply()
     m.scale(scale);
     m.rotate(rotation, 0, 0, 1);
     m.translate(-ox, -oy);
-    node->setMatrix(m);
 
     wasChanged = false;
 }
@@ -364,9 +354,9 @@ void QQuickXAnimatorJob::writeBack()
 
 void QQuickXAnimatorJob::updateCurrentTime(int time)
 {
+
     if (!m_controller)
         return;
-    Q_ASSERT(m_controller->m_window->openglContext()->thread() == QThread::currentThread());
 
     m_value = m_from + (m_to - m_from) * m_easing.valueForProgress(time / (qreal) m_duration);
     m_helper->dx = m_value;
@@ -383,7 +373,6 @@ void QQuickYAnimatorJob::updateCurrentTime(int time)
 {
     if (!m_controller)
         return;
-    Q_ASSERT(m_controller->m_window->openglContext()->thread() == QThread::currentThread());
 
     m_value = m_from + (m_to - m_from) * m_easing.valueForProgress(time / (qreal) m_duration);
     m_helper->dy = m_value;
@@ -391,7 +380,6 @@ void QQuickYAnimatorJob::updateCurrentTime(int time)
 }
 
 QQuickOpacityAnimatorJob::QQuickOpacityAnimatorJob()
-    : m_opacityNode(0)
 {
 }
 
@@ -399,36 +387,11 @@ void QQuickOpacityAnimatorJob::initialize(QQuickAnimatorController *controller)
 {
     QQuickAnimatorJob::initialize(controller);
     QQuickItemPrivate *d = QQuickItemPrivate::get(m_target);
-    if (d->extra.isAllocated()
-            && d->extra->layer
-            && d->extra->layer->enabled()) {
-        d = QQuickItemPrivate::get(d->extra->layer->m_effectSource);
-    }
-
-    m_opacityNode = d->opacityNode();
-    if (!m_opacityNode) {
-        m_opacityNode = new QSGOpacityNode();
-        d->extra.value().opacityNode = m_opacityNode;
-
-        QSGNode *child = d->clipNode();
-        if (!child)
-            child = d->rootNode();
-        if (!child)
-            child = d->groupNode;
-
-        if (child) {
-            if (child->parent())
-                child->parent()->removeChildNode(child);
-            m_opacityNode->appendChildNode(child);
-        }
-
-        d->itemNode()->appendChildNode(m_opacityNode);
-    }
 }
 
 void QQuickOpacityAnimatorJob::nodeWasDestroyed()
 {
-    m_opacityNode = 0;
+    //m_opacityNode = 0;
 }
 
 void QQuickOpacityAnimatorJob::writeBack()
@@ -439,12 +402,10 @@ void QQuickOpacityAnimatorJob::writeBack()
 
 void QQuickOpacityAnimatorJob::updateCurrentTime(int time)
 {
-    if (!m_controller || !m_opacityNode)
+    if (!m_controller /*|| !m_opacityNode*/)
         return;
-    Q_ASSERT(m_controller->m_window->openglContext()->thread() == QThread::currentThread());
 
     m_value = m_from + (m_to - m_from) * m_easing.valueForProgress(time / (qreal) m_duration);
-    m_opacityNode->setOpacity(m_value);
 }
 
 void QQuickScaleAnimatorJob::writeBack()
@@ -457,7 +418,6 @@ void QQuickScaleAnimatorJob::updateCurrentTime(int time)
 {
     if (!m_controller)
         return;
-    Q_ASSERT(m_controller->m_window->openglContext()->thread() == QThread::currentThread());
 
     m_value = m_from + (m_to - m_from) * m_easing.valueForProgress(time / (qreal) m_duration);
     m_helper->scale = m_value;
@@ -477,7 +437,6 @@ void QQuickRotationAnimatorJob::updateCurrentTime(int time)
 {
     if (!m_controller)
         return;
-    Q_ASSERT(m_controller->m_window->openglContext()->thread() == QThread::currentThread());
 
     float t =  m_easing.valueForProgress(time / (qreal) m_duration);
     switch (m_direction) {
@@ -510,8 +469,7 @@ void QQuickRotationAnimatorJob::writeBack()
 }
 
 QQuickUniformAnimatorJob::QQuickUniformAnimatorJob()
-    : m_node(0)
-    , m_uniformIndex(-1)
+    : /*m_node(0)*/m_uniformIndex(-1)
     , m_uniformType(-1)
 {
     m_isUniform = true;
@@ -519,20 +477,21 @@ QQuickUniformAnimatorJob::QQuickUniformAnimatorJob()
 
 void QQuickUniformAnimatorJob::setTarget(QQuickItem *target)
 {
-    if (qobject_cast<QQuickShaderEffect *>(target) != 0)
-        m_target = target;
+    //if (qobject_cast<QQuickShaderEffect *>(target) != 0)
+     m_target = target;
 }
 
 void QQuickUniformAnimatorJob::nodeWasDestroyed()
 {
-    m_node = 0;
+    //m_node = 0;
     m_uniformIndex = -1;
     m_uniformType = -1;
 }
 
 void QQuickUniformAnimatorJob::afterNodeSync()
 {
-    m_node = static_cast<QQuickShaderEffectNode *>(QQuickItemPrivate::get(m_target)->paintNode);
+    //Shader disabled/not used
+    /*m_node = static_cast<QQuickShaderEffectNode *>(QQuickItemPrivate::get(m_target)->paintNode);
 
     if (m_node && m_uniformIndex == -1 && m_uniformType == -1) {
         QQuickShaderEffectMaterial *material =
@@ -549,7 +508,7 @@ void QQuickUniformAnimatorJob::afterNodeSync()
                 }
             }
         }
-    }
+    }*/
 
 }
 
@@ -557,20 +516,12 @@ void QQuickUniformAnimatorJob::updateCurrentTime(int time)
 {
     if (!m_controller)
         return;
-    Q_ASSERT(m_controller->m_window->openglContext()->thread() == QThread::currentThread());
 
-    if (!m_node || m_uniformIndex == -1 || m_uniformType == -1)
+    if (/*!m_node ||*/ m_uniformIndex == -1 || m_uniformType == -1)
         return;
 
     m_value = m_from + (m_to - m_from) * m_easing.valueForProgress(time / (qreal) m_duration);
 
-    QQuickShaderEffectMaterial *material =
-            static_cast<QQuickShaderEffectMaterial *>(m_node->material());
-    material->uniforms[m_uniformType][m_uniformIndex].value = m_value;
-    // As we're not touching the nodes, we need to explicitly mark it dirty.
-    // Otherwise, the renderer will abort repainting if this was the only
-    // change in the graph currently rendering.
-    m_node->markDirty(QSGNode::DirtyMaterial);
 }
 
 void QQuickUniformAnimatorJob::writeBack()

@@ -58,7 +58,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QQuickImageTextureProvider;
+//class QQuickImageTextureProvider;
 
 class QQuickImagePrivate : public QQuickImageBasePrivate
 {
@@ -77,7 +77,7 @@ public:
     QQuickImage::HAlignment hAlign;
     QQuickImage::VAlignment vAlign;
 
-    QQuickImageTextureProvider *provider;
+    //QQuickImageTextureProvider *provider;
 };
 
 QT_END_NAMESPACE

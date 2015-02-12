@@ -48,8 +48,6 @@
 
 #include <private/qquickdrag_p.h>
 
-#include <QtQuick/private/qsgrenderer_p.h>
-#include <QtQuick/private/qsgtexture_p.h>
 #include <private/qsgrenderloop_p.h>
 #include <private/qquickrendercontrol_p.h>
 #include <private/qquickanimatorcontroller_p.h>
@@ -67,6 +65,9 @@
 #include <QtCore/qabstractanimation.h>
 #include <QtCore/QLibraryInfo>
 #include <QtQml/qqmlincubator.h>
+#include <QBackingStore>
+#include <QPainter>
+
 
 #include <QtQuick/private/qquickpixmapcache_p.h>
 
@@ -75,10 +76,10 @@
 
 QT_BEGIN_NAMESPACE
 
-extern Q_GUI_EXPORT QImage qt_gl_read_framebuffer(const QSize &size, bool alpha_format, bool include_alpha);
 
 bool QQuickWindowPrivate::defaultAlphaBuffer(0);
 
+void forceUpdate(QQuickItem *item,QRect dirtyRect);
 void QQuickWindowPrivate::updateFocusItemTransform()
 {
     Q_Q(QQuickWindow);
@@ -97,12 +98,12 @@ class QQuickWindowIncubationController : public QObject, public QQmlIncubationCo
     Q_OBJECT
 
 public:
-    QQuickWindowIncubationController(QSGRenderLoop *loop)
+    QQuickWindowIncubationController(QSGRenderLoop *loop,QQuickWindow *w)
         : m_renderLoop(loop), m_timer(0)
     {
         // Allow incubation for 1/3 of a frame.
         m_incubation_time = qMax(1, int(1000 / QGuiApplication::primaryScreen()->refreshRate()) / 3);
-
+	m_w=w;
         m_animation_driver = m_renderLoop->animationDriver();
         if (m_animation_driver) {
             connect(m_animation_driver, SIGNAL(stopped()), this, SLOT(animationStopped()));
@@ -150,6 +151,7 @@ protected:
 
 private:
     QSGRenderLoop *m_renderLoop;
+    QQuickWindow * m_w;
     int m_incubation_time;
     QAnimationDriver *m_animation_driver;
     int m_timer;
@@ -198,12 +200,12 @@ have a scope focused item), and the other items will have their focus cleared.
 #ifdef FOCUS_DEBUG
 void printFocusTree(QQuickItem *item, QQuickItem *scope = 0, int depth = 1);
 #endif
-
+/*
 QQuickItem::UpdatePaintNodeData::UpdatePaintNodeData()
 : transformNode(0)
 {
 }
-
+*/
 QQuickRootItem::QQuickRootItem()
 {
 }
@@ -214,6 +216,38 @@ void QQuickWindow::exposeEvent(QExposeEvent *)
     Q_D(QQuickWindow);
     if (d->windowManager)
         d->windowManager->exposureChanged(this);
+
+    QRect rect(QPoint(), geometry().size());
+    /* if (d->m_backingStore) {
+    d->m_backingStore->resize(rect.size());
+    if (d->m_backingStore->paintDevice()->paintEngine())
+{
+    d->m_backingStore->resize(rect.size());
+
+    d->m_backingStore->beginPaint(rect);
+
+    QPaintDevice *device = d->m_backingStore->paintDevice();
+    if (device)
+        {
+      qpnter = new QPainter(device);
+   if (!qpnter->isActive())
+    qpnter->begin(device);
+    forceUpdate(d->contentItem,rect);
+    qpnter->end();
+        }
+    d->m_backingStore->flush(rect);
+}
+} */
+
+    d->m_backingStore->resize(rect.size());
+
+    d->m_backingStore->beginPaint(rect);
+
+    QPaintDevice *device = d->m_backingStore->paintDevice();
+
+    d->m_backingStore->endPaint();
+    d->m_backingStore->flush(rect);
+
 }
 
 /*! \reimp */
@@ -224,6 +258,7 @@ void QQuickWindow::resizeEvent(QResizeEvent *ev)
         d->contentItem->setSize(ev->size());
     if (d->windowManager)
         d->windowManager->resize(this);
+
 }
 
 /*! \reimp */
@@ -232,14 +267,23 @@ void QQuickWindow::showEvent(QShowEvent *)
     Q_D(QQuickWindow);
     if (d->windowManager)
         d->windowManager->show(this);
+
+	QRect rect(QPoint(), geometry().size());
+    d->m_backingStore->resize(rect.size());
+
+    d->m_backingStore->beginPaint(rect);
+
+
+
+    d->m_backingStore->endPaint();
+    d->m_backingStore->flush(rect);
+
 }
 
 /*! \reimp */
 void QQuickWindow::hideEvent(QHideEvent *)
 {
     Q_D(QQuickWindow);
-    if (d->windowManager)
-        d->windowManager->hide(this);
 }
 
 /*! \reimp */
@@ -288,10 +332,14 @@ void QQuickWindowPrivate::polishItems()
 void QQuickWindow::update()
 {
     Q_D(QQuickWindow);
+    if(!screen())
+       return;
     if (d->windowManager)
         d->windowManager->update(this);
-    else if (d->renderControl)
+    else 
+    if (d->renderControl)
         d->renderControl->update();
+
 }
 
 void forcePolishHelper(QQuickItem *item)
@@ -316,49 +364,38 @@ void QQuickWindow::forcePolish()
     forcePolishHelper(d->contentItem);
 }
 
-void forceUpdate(QQuickItem *item)
+void forceUpdate(QQuickItem *item,QRect dirtyRect)
 {
     if (item->flags() & QQuickItem::ItemHasContents)
-        item->update();
-    QQuickItemPrivate::get(item)->dirty(QQuickItemPrivate::ChildrenUpdateMask);
+        QQuickItemPrivate::get(item)->dirty(QQuickItemPrivate::ChildrenUpdateMask);
+    
+     if (item->isVisible()  && QQuickItem::ItemHasContents)
+     {
+        item->updateFromWin(dirtyRect);
 
-    QList <QQuickItem *> items = item->childItems();
+     }
+    QList <QQuickItem *> items = QQuickItemPrivate::get(item)->paintOrderChildItems();//item->childItems();
     for (int i=0; i<items.size(); ++i)
-        forceUpdate(items.at(i));
+        forceUpdate(items.at(i),dirtyRect);
+    
 }
 
 void QQuickWindowPrivate::syncSceneGraph()
 {
     QML_MEMORY_SCOPE_STRING("SceneGraph");
     Q_Q(QQuickWindow);
-
-    animationController->beforeNodeSync();
+     animationController->beforeNodeSync();
 
     emit q->beforeSynchronizing();
-    if (!renderer) {
-        forceUpdate(contentItem);
 
-        QSGRootNode *rootNode = new QSGRootNode;
-        rootNode->appendChildNode(QQuickItemPrivate::get(contentItem)->itemNode());
-        renderer = context->createRenderer();
-        renderer->setRootNode(rootNode);
-    }
-
-    updateDirtyNodes();
 
     animationController->afterNodeSync();
 
     // Copy the current state of clearing from window into renderer.
-    renderer->setClearColor(clearColor);
-    QSGRenderer::ClearMode mode = QSGRenderer::ClearStencilBuffer | QSGRenderer::ClearDepthBuffer;
-    if (clearBeforeRendering)
-        mode |= QSGRenderer::ClearColorBuffer;
-    renderer->setClearMode(mode);
-
-    renderer->setCustomRenderMode(customRenderMode);
 
     emit q->afterSynchronizing();
     context->endSync();
+
 }
 
 
@@ -366,27 +403,70 @@ void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
 {
     QML_MEMORY_SCOPE_STRING("SceneGraph");
     Q_Q(QQuickWindow);
-    if (!renderer)
-        return;
-
+    qDebug("renderSceneGraph");
     animationController->advance();
-    emit q->beforeRendering();
-    int fboId = 0;
-    const qreal devicePixelRatio = q->devicePixelRatio();
-    renderer->setDeviceRect(QRect(QPoint(0, 0), size * devicePixelRatio));
-    if (renderTargetId) {
-        fboId = renderTargetId;
-        renderer->setViewportRect(QRect(QPoint(0, 0), renderTargetSize));
-    } else {
-        renderer->setViewportRect(QRect(QPoint(0, 0), size * devicePixelRatio));
-    }
-    renderer->setProjectionMatrixToRect(QRect(QPoint(0, 0), size));
-    renderer->setDevicePixelRatio(q->devicePixelRatio());
+     emit q->beforeRendering();
+QRect rect(QPoint(), q->geometry().size());
+    if (m_backingStore) {
+    if (m_backingStore->paintDevice()->paintEngine())
+{
+    m_backingStore->resize(rect.size());
 
-    context->renderNextFrame(renderer, fboId);
+    m_image = QImage(q->geometry().size(), QImage::Format_RGB32);
+    m_backingStore->beginPaint(rect);
+
+    QPaintDevice *device = m_backingStore->paintDevice();
+    if (device)
+	{
+   //if (!q->qpnter)
+      q->qpnter = new QPainter(device);
+   if (!q->qpnter->isActive())
+    q->qpnter->begin(device);
+    forceUpdate(contentItem,rect);
+    q->qpnter->end();
+        }
+    m_backingStore->flush(rect);
+}
+} 
+    if (m_backingStore) 
+    m_backingStore->flush(rect);
     emit q->afterRendering();
 }
 
+void QQuickWindow::endPaint()
+{
+    Q_D(QQuickWindow);
+    QRect rect(QPoint(), geometry().size());
+    qpnter->end();
+    d->m_backingStore->endPaint();//flush(rect);
+}
+
+void QQuickWindow::beginPaint()
+{
+    Q_D(QQuickWindow);
+    QRect rect(QPoint(), geometry().size());
+    //d->m_backingStore = new QBackingStore(this);
+    d->m_backingStore->beginPaint(rect);
+     if (d->m_backingStore) {
+    if (d->m_backingStore->paintDevice())//->paintEngine())
+{
+    d->m_backingStore->resize(rect.size());
+
+    m_image = QImage(geometry().size(), QImage::Format_RGB32);
+
+    QPaintDevice *device = d->m_backingStore->paintDevice();
+    if (device)
+        {
+   //if (!q->qpnter)
+      qpnter = new QPainter(device);
+   if (!qpnter->isActive())
+    qpnter->begin(device);
+   qDebug("QQuickWindow::beginPaint");
+}
+}
+   qDebug("QQuickWindow::beginPaint 11");
+}
+}
 QQuickWindowPrivate::QQuickWindowPrivate()
     : contentItem(0)
     , activeFocusItem(0)
@@ -400,17 +480,13 @@ QQuickWindowPrivate::QQuickWindowPrivate()
     , touchMouseId(-1)
     , touchMousePressTimestamp(0)
     , dirtyItemList(0)
-    , context(0)
-    , renderer(0)
     , windowManager(0)
     , renderControl(0)
     , clearColor(Qt::white)
     , clearBeforeRendering(true)
-    , persistentGLContext(true)
     , persistentSceneGraph(true)
     , lastWheelEventAccepted(false)
     , componentCompleted(true)
-    , renderTarget(0)
     , renderTargetId(0)
     , incubationController(0)
 {
@@ -428,16 +504,23 @@ void QQuickWindowPrivate::init(QQuickWindow *c, QQuickRenderControl *control)
     q_ptr = c;
 
     Q_Q(QQuickWindow);
-
+    q->create();
+    m_backingStore = new QBackingStore(q);
+    //QPaintDevice *device = m_backingStore->paintDevice();
+    //if (device)
+      // q->qpnter=new QPainter(device);
+	 QRect rect(QPoint(), QSize(800,480));
+    animationController = new QQuickAnimatorController();
+    animationController->m_window = q;
+    m_image = QImage(q->geometry().size(), QImage::Format_RGB32);
     contentItem = new QQuickRootItem;
     QQmlEngine::setObjectOwnership(contentItem, QQmlEngine::CppOwnership);
     QQuickItemPrivate *contentItemPrivate = QQuickItemPrivate::get(contentItem);
-    contentItemPrivate->window = q;
+    contentItemPrivate->window = c;
     contentItemPrivate->windowRefCount = 1;
     contentItemPrivate->flags |= QQuickItem::ItemIsFocusScope;
     contentItem->setSize(q->size());
 
-    customRenderMode = qgetenv("QSG_VISUALIZE");
     renderControl = control;
     if (renderControl)
         renderControl->setWindow(q);
@@ -455,20 +538,38 @@ void QQuickWindowPrivate::init(QQuickWindow *c, QQuickRenderControl *control)
         windowManager->addWindow(q);
         sg = windowManager->sceneGraphContext();
         context = windowManager->createRenderContext(sg);
-    }
+   } 
 
-    q->setSurfaceType(QWindow::OpenGLSurface);
     q->setFormat(sg->defaultSurfaceFormat());
 
-    animationController = new QQuickAnimatorController();
-    animationController->m_window = q;
 
     QObject::connect(context, SIGNAL(initialized()), q, SIGNAL(sceneGraphInitialized()), Qt::DirectConnection);
     QObject::connect(context, SIGNAL(invalidated()), q, SIGNAL(sceneGraphInvalidated()), Qt::DirectConnection);
     QObject::connect(context, SIGNAL(invalidated()), q, SLOT(cleanupSceneGraph()), Qt::DirectConnection);
+//BANAN
+    m_backingStore = new QBackingStore(q);
+    if (m_backingStore) {
+    if (m_backingStore->paintDevice())
+{
+    m_backingStore->resize(rect.size());
 
-    QObject::connect(q, SIGNAL(focusObjectChanged(QObject*)), q, SIGNAL(activeFocusItemChanged()));
-    QObject::connect(q, SIGNAL(screenChanged(QScreen*)), q, SLOT(forcePolish()));
+    m_image = QImage(q->geometry().size(), QImage::Format_RGB32);
+    m_backingStore->beginPaint(rect);
+
+    QPaintDevice *device = m_backingStore->paintDevice();
+    if (device)
+        {
+   //if (!q->qpnter)
+      q->qpnter = new QPainter(device);
+   if (!q->qpnter->isActive())
+    q->qpnter->begin(device);
+    forceUpdate(contentItem,rect);
+    q->qpnter->end();
+        }
+    m_backingStore->flush(rect);
+}
+}
+
 }
 
 /*!
@@ -919,18 +1020,7 @@ void QQuickWindowPrivate::notifyFocusChangesRecur(QQuickItem **items, int remain
 void QQuickWindowPrivate::dirtyItem(QQuickItem *)
 {
     Q_Q(QQuickWindow);
-    q->maybeUpdate();
 }
-
-void QQuickWindowPrivate::cleanup(QSGNode *n)
-{
-    Q_Q(QQuickWindow);
-
-    Q_ASSERT(!cleanupNodeList.contains(n));
-    cleanupNodeList.append(n);
-    q->maybeUpdate();
-}
-
 /*!
     \qmltype Window
     \instantiates QQuickWindow
@@ -1063,6 +1153,14 @@ QQuickWindow::QQuickWindow(QQuickWindowPrivate &dd, QWindow *parent)
     : QWindow(dd, parent)
 {
     Q_D(QQuickWindow);
+	 if (parent)
+        setGeometry(QRect(0, 0, 640, 480));
+    else {
+        const QSize baseSize = QSize(640, 480);
+        setGeometry(QRect(geometry().topLeft(), baseSize));
+
+    }
+
     d->init(this);
 }
 
@@ -1085,13 +1183,9 @@ QQuickWindow::~QQuickWindow()
 {
     Q_D(QQuickWindow);
 
-    d->animationController->deleteLater();
     if (d->renderControl) {
         d->renderControl->windowDestroyed();
-    } else if (d->windowManager) {
-        d->windowManager->removeWindow(this);
-        d->windowManager->windowDestroyed(this);
-    }
+    } 
 
     QCoreApplication::removePostedEvents(this, QEvent::DeferredDelete);
     QCoreApplication::sendPostedEvents(0, QEvent::DeferredDelete);
@@ -1118,9 +1212,9 @@ QQuickWindow::~QQuickWindow()
 void QQuickWindow::releaseResources()
 {
     Q_D(QQuickWindow);
-    if (d->windowManager)
-        d->windowManager->releaseResources(this);
-    QQuickPixmap::purgeCache();
+    /*if (d->windowManager)
+        d->windowManager->releaseResources(this);*/
+    //QQuickPixmap::purgeCache();
 }
 
 
@@ -1146,13 +1240,13 @@ void QQuickWindow::releaseResources()
     \sa setPersistentSceneGraph(),
     QOpenGLContext::aboutToBeDestroyed(), sceneGraphInitialized()
  */
-
+/*
 void QQuickWindow::setPersistentOpenGLContext(bool persistent)
 {
     Q_D(QQuickWindow);
     d->persistentGLContext = persistent;
 }
-
+*/
 
 
 /*!
@@ -1162,13 +1256,13 @@ void QQuickWindow::setPersistentOpenGLContext(bool persistent)
     \note This is a hint. When and how this happens is implementation
     specific.
  */
-
+/*
 bool QQuickWindow::isPersistentOpenGLContext() const
 {
     Q_D(const QQuickWindow);
     return d->persistentGLContext;
 }
-
+*/
 
 
 /*!
@@ -2321,6 +2415,7 @@ void QQuickWindowPrivate::contextCreationFailureMessage(const QSurfaceFormat &fo
                                                         QString *untranslatedMessage,
                                                         bool isEs)
 {
+/*
     const QString contextType = QLatin1String(isEs ? "EGL" : "OpenGL");
     QString formatStr;
     QDebug(&formatStr) << format;
@@ -2328,7 +2423,7 @@ void QQuickWindowPrivate::contextCreationFailureMessage(const QSurfaceFormat &fo
     const bool isDebug = QLibraryInfo::isDebugBuild();
     const QString eglLibName = QLatin1String(isDebug ? "libEGLd.dll" : "libEGL.dll");
     const QString glesLibName = QLatin1String(isDebug ? "libGLESv2d.dll" : "libGLESv2.dll");
-     //: %1 Context type (Open GL, EGL), %2 format, ANGLE %3, %4 library names
+     : %1 Context type (Open GL, EGL), %2 format, ANGLE %3, %4 library names
     const char msg[] = QT_TRANSLATE_NOOP("QQuickWindow",
         "Failed to create %1 context for format %2.\n"
         "This is most likely caused by not having the necessary graphics drivers installed.\n\n"
@@ -2337,13 +2432,14 @@ void QQuickWindowPrivate::contextCreationFailureMessage(const QSurfaceFormat &fo
         "are available in the application executable's directory or in a location listed in PATH.");
     *translatedMessage = QQuickWindow::tr(msg).arg(contextType, formatStr, eglLibName, glesLibName);
     *untranslatedMessage = QString::fromLatin1(msg).arg(contextType, formatStr, eglLibName, glesLibName);
-#else // Q_OS_WIN32
-    //: %1 Context type (Open GL, EGL), %2 format specification
+#else  Q_OS_WIN32
+    : %1 Context type (Open GL, EGL), %2 format specification
     const char msg[] = QT_TRANSLATE_NOOP("QQuickWindow",
                                          "Failed to create %1 context for format %2");
     *translatedMessage = QQuickWindow::tr(msg).arg(contextType, formatStr);
     *untranslatedMessage = QString::fromLatin1(msg).arg(contextType, formatStr);
-#endif // !Q_OS_WIN32
+#endif  !Q_OS_WIN32
+*/
 }
 
 /*!
@@ -2420,15 +2516,17 @@ bool QQuickWindow::sendEvent(QQuickItem *item, QEvent *e)
 
 void QQuickWindowPrivate::cleanupNodes()
 {
+/*
     for (int ii = 0; ii < cleanupNodeList.count(); ++ii)
         delete cleanupNodeList.at(ii);
     cleanupNodeList.clear();
+*/
 }
 
 void QQuickWindowPrivate::cleanupNodesOnShutdown(QQuickItem *item)
 {
     QQuickItemPrivate *p = QQuickItemPrivate::get(item);
-    if (p->itemNodeInstance) {
+  /*  if (p->itemNodeInstance) {
         delete p->itemNodeInstance;
         p->itemNodeInstance = 0;
 
@@ -2443,7 +2541,7 @@ void QQuickWindowPrivate::cleanupNodesOnShutdown(QQuickItem *item)
 
         p->dirty(QQuickItemPrivate::Window);
     }
-
+*/
     for (int ii = 0; ii < p->childItems.count(); ++ii)
         cleanupNodesOnShutdown(p->childItems.at(ii));
 }
@@ -2457,7 +2555,7 @@ void QQuickWindowPrivate::cleanupNodesOnShutdown()
     QSet<QQuickItem *>::const_iterator it = parentlessItems.begin();
     for (; it != parentlessItems.end(); ++it)
         cleanupNodesOnShutdown(*it);
-    animationController->windowNodesDestroyed();
+    //animationController->windowNodesDestroyed();
     q->cleanupSceneGraph();
 }
 
@@ -2472,7 +2570,8 @@ void QQuickWindowPrivate::updateDirtyNodes()
     QQuickItem *updateList = dirtyItemList;
     dirtyItemList = 0;
     if (updateList) QQuickItemPrivate::get(updateList)->prevDirtyItem = &updateList;
-
+   // if (updateList)
+//	forceUpdate(contentItem);
     while (updateList) {
         QQuickItem *item = updateList;
         QQuickItemPrivate *itemPriv = QQuickItemPrivate::get(item);
@@ -2487,6 +2586,7 @@ void QQuickWindowPrivate::updateDirtyNodes()
 
 void QQuickWindowPrivate::updateDirtyNode(QQuickItem *item)
 {
+    Q_Q(QQuickWindow);
     QQuickItemPrivate *itemPriv = QQuickItemPrivate::get(item);
     quint32 dirty = itemPriv->dirtyAttributes;
     itemPriv->dirtyAttributes = 0;
@@ -2494,221 +2594,10 @@ void QQuickWindowPrivate::updateDirtyNode(QQuickItem *item)
     if ((dirty & QQuickItemPrivate::TransformUpdateMask) ||
         (dirty & QQuickItemPrivate::Size && itemPriv->origin() != QQuickItem::TopLeft &&
          (itemPriv->scale() != 1. || itemPriv->rotation() != 0.))) {
+    if (item != contentItem)
+    forceUpdate(item,QRect(item->mapToItem(contentItem,QPoint(0,0)).x(),item->mapToItem(contentItem,QPoint(0,0)).y(),item->width(),item->height()));
 
-        QMatrix4x4 matrix;
-
-        if (itemPriv->x != 0. || itemPriv->y != 0.)
-            matrix.translate(itemPriv->x, itemPriv->y);
-
-        for (int ii = itemPriv->transforms.count() - 1; ii >= 0; --ii)
-            itemPriv->transforms.at(ii)->applyTo(&matrix);
-
-        if (itemPriv->scale() != 1. || itemPriv->rotation() != 0.) {
-            QPointF origin = item->transformOriginPoint();
-            matrix.translate(origin.x(), origin.y());
-            if (itemPriv->scale() != 1.)
-                matrix.scale(itemPriv->scale(), itemPriv->scale());
-            if (itemPriv->rotation() != 0.)
-                matrix.rotate(itemPriv->rotation(), 0, 0, 1);
-            matrix.translate(-origin.x(), -origin.y());
-        }
-
-        itemPriv->itemNode()->setMatrix(matrix);
-    }
-
-    bool clipEffectivelyChanged = (dirty & (QQuickItemPrivate::Clip | QQuickItemPrivate::Window)) &&
-                                  ((item->clip() == false) != (itemPriv->clipNode() == 0));
-    int effectRefCount = itemPriv->extra.isAllocated()?itemPriv->extra->effectRefCount:0;
-    bool effectRefEffectivelyChanged = (dirty & (QQuickItemPrivate::EffectReference | QQuickItemPrivate::Window)) &&
-                                  ((effectRefCount == 0) != (itemPriv->rootNode() == 0));
-
-    if (clipEffectivelyChanged) {
-        QSGNode *parent = itemPriv->opacityNode() ? (QSGNode *) itemPriv->opacityNode() :
-                                                    (QSGNode *)itemPriv->itemNode();
-        QSGNode *child = itemPriv->rootNode() ? (QSGNode *)itemPriv->rootNode() :
-                                                (QSGNode *)itemPriv->groupNode;
-
-        if (item->clip()) {
-            Q_ASSERT(itemPriv->clipNode() == 0);
-            itemPriv->extra.value().clipNode = new QQuickDefaultClipNode(item->clipRect());
-            itemPriv->clipNode()->update();
-
-            if (child)
-                parent->removeChildNode(child);
-            parent->appendChildNode(itemPriv->clipNode());
-            if (child)
-                itemPriv->clipNode()->appendChildNode(child);
-
-        } else {
-            Q_ASSERT(itemPriv->clipNode() != 0);
-            parent->removeChildNode(itemPriv->clipNode());
-            if (child)
-                itemPriv->clipNode()->removeChildNode(child);
-            delete itemPriv->clipNode();
-            itemPriv->extra->clipNode = 0;
-            if (child)
-                parent->appendChildNode(child);
-        }
-    }
-
-    if (dirty & QQuickItemPrivate::ChildrenUpdateMask)
-        itemPriv->childContainerNode()->removeAllChildNodes();
-
-    if (effectRefEffectivelyChanged) {
-        QSGNode *parent = itemPriv->clipNode();
-        if (!parent)
-            parent = itemPriv->opacityNode();
-        if (!parent)
-            parent = itemPriv->itemNode();
-        QSGNode *child = itemPriv->groupNode;
-
-        if (itemPriv->extra.isAllocated() && itemPriv->extra->effectRefCount) {
-            Q_ASSERT(itemPriv->rootNode() == 0);
-            itemPriv->extra->rootNode = new QSGRootNode;
-
-            if (child)
-                parent->removeChildNode(child);
-            parent->appendChildNode(itemPriv->rootNode());
-            if (child)
-                itemPriv->rootNode()->appendChildNode(child);
-        } else {
-            Q_ASSERT(itemPriv->rootNode() != 0);
-            parent->removeChildNode(itemPriv->rootNode());
-            if (child)
-                itemPriv->rootNode()->removeChildNode(child);
-            delete itemPriv->rootNode();
-            itemPriv->extra->rootNode = 0;
-            if (child)
-                parent->appendChildNode(child);
-        }
-    }
-
-    if (dirty & QQuickItemPrivate::ChildrenUpdateMask) {
-        QSGNode *groupNode = itemPriv->groupNode;
-        if (groupNode)
-            groupNode->removeAllChildNodes();
-
-        QList<QQuickItem *> orderedChildren = itemPriv->paintOrderChildItems();
-        int ii = 0;
-
-        for (; ii < orderedChildren.count() && orderedChildren.at(ii)->z() < 0; ++ii) {
-            QQuickItemPrivate *childPrivate = QQuickItemPrivate::get(orderedChildren.at(ii));
-            if (!childPrivate->explicitVisible &&
-                (!childPrivate->extra.isAllocated() || !childPrivate->extra->effectRefCount))
-                continue;
-            if (childPrivate->itemNode()->parent())
-                childPrivate->itemNode()->parent()->removeChildNode(childPrivate->itemNode());
-
-            itemPriv->childContainerNode()->appendChildNode(childPrivate->itemNode());
-        }
-
-        QSGNode *beforePaintNode = itemPriv->groupNode ? itemPriv->groupNode->lastChild() : 0;
-        if (beforePaintNode || itemPriv->extra.isAllocated())
-            itemPriv->extra.value().beforePaintNode = beforePaintNode;
-
-        if (itemPriv->paintNode)
-            itemPriv->childContainerNode()->appendChildNode(itemPriv->paintNode);
-
-        for (; ii < orderedChildren.count(); ++ii) {
-            QQuickItemPrivate *childPrivate = QQuickItemPrivate::get(orderedChildren.at(ii));
-            if (!childPrivate->explicitVisible &&
-                (!childPrivate->extra.isAllocated() || !childPrivate->extra->effectRefCount))
-                continue;
-            if (childPrivate->itemNode()->parent())
-                childPrivate->itemNode()->parent()->removeChildNode(childPrivate->itemNode());
-
-            itemPriv->childContainerNode()->appendChildNode(childPrivate->itemNode());
-        }
-    }
-
-    if ((dirty & QQuickItemPrivate::Size) && itemPriv->clipNode()) {
-        itemPriv->clipNode()->setRect(item->clipRect());
-        itemPriv->clipNode()->update();
-    }
-
-    if (dirty & (QQuickItemPrivate::OpacityValue | QQuickItemPrivate::Visible
-                 | QQuickItemPrivate::HideReference | QQuickItemPrivate::Window))
-    {
-        qreal opacity = itemPriv->explicitVisible && (!itemPriv->extra.isAllocated() || itemPriv->extra->hideRefCount == 0)
-                      ? itemPriv->opacity() : qreal(0);
-
-        if (opacity != 1 && !itemPriv->opacityNode()) {
-            itemPriv->extra.value().opacityNode = new QSGOpacityNode;
-
-            QSGNode *parent = itemPriv->itemNode();
-            QSGNode *child = itemPriv->clipNode();
-            if (!child)
-                child = itemPriv->rootNode();
-            if (!child)
-                child = itemPriv->groupNode;
-
-            if (child)
-                parent->removeChildNode(child);
-            parent->appendChildNode(itemPriv->opacityNode());
-            if (child)
-                itemPriv->opacityNode()->appendChildNode(child);
-        }
-        if (itemPriv->opacityNode())
-            itemPriv->opacityNode()->setOpacity(opacity);
-    }
-
-    if (dirty & QQuickItemPrivate::ContentUpdateMask) {
-
-        if (itemPriv->flags & QQuickItem::ItemHasContents) {
-            updatePaintNodeData.transformNode = itemPriv->itemNode();
-            itemPriv->paintNode = item->updatePaintNode(itemPriv->paintNode, &updatePaintNodeData);
-
-            Q_ASSERT(itemPriv->paintNode == 0 ||
-                     itemPriv->paintNode->parent() == 0 ||
-                     itemPriv->paintNode->parent() == itemPriv->childContainerNode());
-
-            if (itemPriv->paintNode && itemPriv->paintNode->parent() == 0) {
-                if (itemPriv->extra.isAllocated() && itemPriv->extra->beforePaintNode)
-                    itemPriv->childContainerNode()->insertChildNodeAfter(itemPriv->paintNode, itemPriv->extra->beforePaintNode);
-                else
-                    itemPriv->childContainerNode()->prependChildNode(itemPriv->paintNode);
-            }
-        } else if (itemPriv->paintNode) {
-            delete itemPriv->paintNode;
-            itemPriv->paintNode = 0;
-        }
-    }
-
-#ifndef QT_NO_DEBUG
-    // Check consistency.
-    const QSGNode *nodeChain[] = {
-        itemPriv->itemNodeInstance,
-        itemPriv->opacityNode(),
-        itemPriv->clipNode(),
-        itemPriv->rootNode(),
-        itemPriv->groupNode,
-        itemPriv->paintNode,
-    };
-
-    int ip = 0;
-    for (;;) {
-        while (ip < 5 && nodeChain[ip] == 0)
-            ++ip;
-        if (ip == 5)
-            break;
-        int ic = ip + 1;
-        while (ic < 5 && nodeChain[ic] == 0)
-            ++ic;
-        const QSGNode *parent = nodeChain[ip];
-        const QSGNode *child = nodeChain[ic];
-        if (child == 0) {
-            Q_ASSERT(parent == itemPriv->groupNode || parent->childCount() == 0);
-        } else {
-            Q_ASSERT(parent == itemPriv->groupNode || parent->childCount() == 1);
-            Q_ASSERT(child->parent() == parent);
-            bool containsChild = false;
-            for (QSGNode *n = parent->firstChild(); n; n = n->nextSibling())
-                containsChild |= (n == child);
-            Q_ASSERT(containsChild);
-        }
-        ip = ic;
-    }
-#endif
+}
 
 }
 
@@ -2726,23 +2615,20 @@ bool QQuickWindowPrivate::emitError(QQuickWindow::SceneGraphError error, const Q
 void QQuickWindow::maybeUpdate()
 {
     Q_D(QQuickWindow);
+    //update();
+    //d->renderSceneGraph(QSize(640,480));
     if (d->renderControl)
         d->renderControl->maybeUpdate();
     else if (d->windowManager)
         d->windowManager->maybeUpdate(this);
+
 }
 
 void QQuickWindow::cleanupSceneGraph()
 {
     Q_D(QQuickWindow);
 
-    if (!d->renderer)
-        return;
-
-    delete d->renderer->rootNode();
-    delete d->renderer;
-
-    d->renderer = 0;
+//TODO
 }
 
 void QQuickWindow::setTransientParent_helper(QQuickWindow *window)
@@ -2759,13 +2645,8 @@ void QQuickWindow::setTransientParent_helper(QQuickWindow *window)
 
     \sa sceneGraphInitialized(), sceneGraphInvalidated()
  */
-
-QOpenGLContext *QQuickWindow::openglContext() const
-{
-    Q_D(const QQuickWindow);
-    return d->context->openglContext();
-}
-
+/*
+*/
 /*!
     \fn void QQuickWindow::frameSwapped()
 
@@ -2876,25 +2757,6 @@ QOpenGLContext *QQuickWindow::openglContext() const
     This function can only be called from the thread doing
     the rendering.
  */
-
-void QQuickWindow::setRenderTarget(QOpenGLFramebufferObject *fbo)
-{
-    Q_D(QQuickWindow);
-    if (d->context && QThread::currentThread() != d->context->thread()) {
-        qWarning("QQuickWindow::setRenderThread: Cannot set render target from outside the rendering thread");
-        return;
-    }
-
-    d->renderTarget = fbo;
-    if (fbo) {
-        d->renderTargetId = fbo->handle();
-        d->renderTargetSize = fbo->size();
-    } else {
-        d->renderTargetId = 0;
-        d->renderTargetSize = QSize();
-    }
-}
-
 /*!
     \overload
 
@@ -2912,16 +2774,10 @@ void QQuickWindow::setRenderTarget(QOpenGLFramebufferObject *fbo)
 void QQuickWindow::setRenderTarget(uint fboId, const QSize &size)
 {
     Q_D(QQuickWindow);
-    if (d->context && QThread::currentThread() != d->context->thread()) {
-        qWarning("QQuickWindow::setRenderThread: Cannot set render target from outside the rendering thread");
-        return;
-    }
-
     d->renderTargetId = fboId;
     d->renderTargetSize = size;
 
     // Unset any previously set instance...
-    d->renderTarget = 0;
 }
 
 
@@ -2952,12 +2808,6 @@ QSize QQuickWindow::renderTargetSize() const
     The default is to render to the surface of the window, in which
     case the render target is 0.
  */
-QOpenGLFramebufferObject *QQuickWindow::renderTarget() const
-{
-    Q_D(const QQuickWindow);
-    return d->renderTarget;
-}
-
 
 /*!
     Grabs the contents of the window and returns it as an image.
@@ -2974,42 +2824,7 @@ QOpenGLFramebufferObject *QQuickWindow::renderTarget() const
 QImage QQuickWindow::grabWindow()
 {
     Q_D(QQuickWindow);
-    if (!isVisible()) {
-
-        if (d->context->openglContext()) {
-            qWarning("QQuickWindow::grabWindow: scene graph already in use");
-            return QImage();
-        }
-
-        if (!handle() || !size().isValid()) {
-            qWarning("QQuickWindow::grabWindow: window must be created and have a valid size");
-            return QImage();
-        }
-
-        QOpenGLContext context;
-        context.setFormat(requestedFormat());
-        context.setShareContext(QOpenGLContextPrivate::globalShareContext());
-        context.create();
-        context.makeCurrent(this);
-        d->context->initialize(&context);
-
-        d->polishItems();
-        d->syncSceneGraph();
-        d->renderSceneGraph(size());
-
-        QImage image = qt_gl_read_framebuffer(size() * devicePixelRatio(), false, false);
-        d->cleanupNodesOnShutdown();
-        d->context->invalidate();
-        context.doneCurrent();
-
-        return image;
-    }
-
-    if (d->renderControl)
-        return d->renderControl->grab();
-    else if (d->windowManager)
-        return d->windowManager->grab(this);
-    return QImage();
+    //TODO The original plan was to have a master bitmap and returning it here.
 }
 
 /*!
@@ -3020,15 +2835,14 @@ QImage QQuickWindow::grabWindow()
     The controller is owned by the window and will be destroyed when the window
     is deleted.
 */
-QQmlIncubationController *QQuickWindow::incubationController() const
+QQmlIncubationController *QQuickWindow::incubationController() //const
 {
     Q_D(const QQuickWindow);
 
     if (!d->windowManager)
-        return 0; // TODO: make sure that this is safe
-
+        return 0; 
     if (!d->incubationController)
-        d->incubationController = new QQuickWindowIncubationController(d->windowManager);
+        d->incubationController = new QQuickWindowIncubationController(d->windowManager,this);
     return d->incubationController;
 }
 
@@ -3240,11 +3054,6 @@ bool QQuickWindow::clearBeforeRendering() const
     \overload
  */
 
-QSGTexture *QQuickWindow::createTextureFromImage(const QImage &image) const
-{
-    return createTextureFromImage(image, 0);
-}
-
 
 /*!
     Creates a new QSGTexture from the supplied \a image. If the image has an
@@ -3277,20 +3086,6 @@ QSGTexture *QQuickWindow::createTextureFromImage(const QImage &image) const
     \sa sceneGraphInitialized(), QSGTexture
  */
 
-QSGTexture *QQuickWindow::createTextureFromImage(const QImage &image, CreateTextureOptions options) const
-{
-    Q_D(const QQuickWindow);
-    if (d->context && d->context->openglContext()) {
-        if (options & TextureCanUseAtlas)
-            return d->context->createTexture(image);
-        else
-            return d->context->createTextureNoAtlas(image);
-    }
-    else
-        return 0;
-}
-
-
 
 /*!
     Creates a new QSGTexture object from an existing GL texture \a id and \a size.
@@ -3309,20 +3104,6 @@ QSGTexture *QQuickWindow::createTextureFromImage(const QImage &image, CreateText
 
     \sa sceneGraphInitialized(), QSGTexture
  */
-QSGTexture *QQuickWindow::createTextureFromId(uint id, const QSize &size, CreateTextureOptions options) const
-{
-    Q_D(const QQuickWindow);
-    if (d->context && d->context->openglContext()) {
-        QSGPlainTexture *texture = new QSGPlainTexture();
-        texture->setTextureId(id);
-        texture->setHasAlphaChannel(options & TextureHasAlphaChannel);
-        texture->setOwnsTexture(options & TextureOwnsGLTexture);
-        texture->setTextureSize(size);
-        return texture;
-    }
-    return 0;
-}
-
 /*!
     \qmlproperty color Window::color
 
@@ -3409,49 +3190,6 @@ void QQuickWindow::setDefaultAlphaBuffer(bool useAlpha)
 
     \sa QQuickWindow::beforeRendering()
  */
-void QQuickWindow::resetOpenGLState()
-{
-    if (!openglContext())
-        return;
-
-    QOpenGLFunctions *gl = openglContext()->functions();
-
-    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    int maxAttribs;
-    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttribs);
-    for (int i=0; i<maxAttribs; ++i) {
-        gl->glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, 0, 0);
-        gl->glDisableVertexAttribArray(i);
-    }
-
-    gl->glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_SCISSOR_TEST);
-
-    glColorMask(true, true, true, true);
-    glClearColor(0, 0, 0, 0);
-
-    glDepthMask(true);
-    glDepthFunc(GL_LESS);
-    gl->glClearDepthf(1);
-
-    glStencilMask(0xff);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-    glStencilFunc(GL_ALWAYS, 0, 0xff);
-
-    glDisable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ZERO);
-
-    gl->glUseProgram(0);
-
-    QOpenGLFramebufferObject::bindDefault();
-}
-
 /*!
     \qmlproperty string Window::title
 

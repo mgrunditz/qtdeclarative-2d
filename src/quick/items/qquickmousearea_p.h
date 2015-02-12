@@ -159,8 +159,9 @@ protected:
     void geometryChanged(const QRectF &newGeometry,
                                  const QRectF &oldGeometry) Q_DECL_OVERRIDE;
     void itemChange(ItemChange change, const ItemChangeData& value) Q_DECL_OVERRIDE;
-    QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *) Q_DECL_OVERRIDE;
-
+    // API change
+    //QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *) Q_DECL_OVERRIDE;
+    void updatePaintNode();
 private:
     void handlePress();
     void handleRelease();

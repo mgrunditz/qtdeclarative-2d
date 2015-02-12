@@ -53,13 +53,13 @@
 
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/private/qquickwindow_p.h>
-#include <QtQuick/private/qsgcontext_p.h>
+//#include <QtQuick/private/qsgcontext_p.h>
 #include <private/qqmlprofilerservice_p.h>
 #include <QtCore/private/qobject_p.h>
 
 QT_BEGIN_NAMESPACE
 
-extern Q_GUI_EXPORT QImage qt_gl_read_framebuffer(const QSize &size, bool alpha_format, bool include_alpha);
+//extern Q_GUI_EXPORT QImage qt_gl_read_framebuffer(const QSize &size, bool alpha_format, bool include_alpha);
 
 class QQuickRenderControlPrivate : public QObjectPrivate
 {
@@ -73,8 +73,8 @@ public:
 
     ~QQuickRenderControlPrivate()
      {
-         delete rc;
-         delete sg;
+         //delete rc;
+         //delete sg;
      }
 
     QQuickWindow *window;
@@ -104,24 +104,25 @@ void QQuickRenderControl::windowDestroyed()
 {
     Q_D(QQuickRenderControl);
     if (d->window == 0) {
-        d->rc->invalidate();
+        //d->rc->invalidate();
         QCoreApplication::sendPostedEvents(0, QEvent::DeferredDelete);
     }
 }
-
+/*
 void QQuickRenderControl::initialize(QOpenGLContext *gl)
 {
     Q_D(QQuickRenderControl);
     if (!d->window)
         return;
 
-    // It is the caller's responsiblity to make a context/surface current.
-    // It cannot be done here since the surface to use may not be the
-    // surface belonging to window. In fact window may not have a native
-    // window/surface at all.
+     It is the caller's responsiblity to make a context/surface current.
+     It cannot be done here since the surface to use may not be the
+     surface belonging to window. In fact window may not have a native
+     window/surface at all.
 
     d->rc->initialize(gl);
 }
+*/
 
 /*!
   This function should be called as late as possible before
@@ -166,14 +167,16 @@ void QQuickRenderControl::invalidate()
         return;
 
     QQuickWindowPrivate *cd = QQuickWindowPrivate::get(d->window);
-    cd->fireAboutToStop();
+    //cd->fireAboutToStop();
     cd->cleanupNodesOnShutdown();
 
     // We must invalidate since the context can potentially be destroyed by the
     // application right after returning from this function. Invalidating is
     // also essential to allow a subsequent initialize() to succeed.
+/*
     d->rc->invalidate();
     QCoreApplication::sendPostedEvents(0, QEvent::DeferredDelete);
+*/
 }
 
 /*!
@@ -212,7 +215,8 @@ QImage QQuickRenderControl::grab()
         return QImage();
 
     render();
-    QImage grabContent = qt_gl_read_framebuffer(d->window->size() * d->window->devicePixelRatio(), false, false);
+    //QImage grabContent = qt_gl_read_framebuffer(d->window->size() * d->window->devicePixelRatio(), false, false);
+    QImage grabContent;
     return grabContent;
 }
 

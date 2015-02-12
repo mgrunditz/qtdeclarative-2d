@@ -80,7 +80,7 @@ QQuickAnimatorController::~QQuickAnimatorController()
             delete job;
     }
 }
-
+/*
 static void qquickanimator_invalidate_node(QAbstractAnimationJob *job)
 {
     if (job->isRenderThreadJob()) {
@@ -100,7 +100,30 @@ void QQuickAnimatorController::windowNodesDestroyed()
         qquickanimator_invalidate_node(it.key());
     }
 }
-
+*/
+static void qquickanimator_invalidate_node(QAbstractAnimationJob *job)
+{
+ // Unused
+/*
+    if (job->isRenderThreadJob()) {
+        static_cast<QQuickAnimatorJob *>(job)->nodeWasDestroyed();
+    } else if (job->isGroup()) {
+        QAnimationGroupJob *g = static_cast<QAnimationGroupJob *>(job);
+        for (QAbstractAnimationJob *a = g->firstChild(); a; a = a->nextSibling())
+            qquickanimator_invalidate_node(a);
+    }*/
+}
+/*
+//TODO not implemented
+void QQuickAnimatorController::windowNodesDestroyed()
+{
+    m_nodesAreInvalid = true;
+    for (QHash<QAbstractAnimationJob *, QQuickAnimatorProxyJob *>::const_iterator it = m_animatorRoots.constBegin();
+         it != m_animatorRoots.constEnd(); ++it) {
+        qquickanimator_invalidate_node(it.key());
+    }
+}
+*/
 void QQuickAnimatorController::itemDestroyed(QObject *o)
 {
     m_deletedSinceLastFrame << (QQuickItem *) o;
@@ -111,7 +134,7 @@ void QQuickAnimatorController::advance()
     bool running = false;
     for (QHash<QAbstractAnimationJob *, QQuickAnimatorProxyJob *>::const_iterator it = m_animatorRoots.constBegin();
          !running && it != m_animatorRoots.constEnd(); ++it) {
-        if (it.key()->isRunning())
+        //if (it.key()->isRunning())
             running = true;
     }
 
@@ -194,6 +217,18 @@ void QQuickAnimatorController::beforeNodeSync()
 
 
 
+    // First sync after a window was hidden or otherwise invalidated.
+    // call initialize again to pick up new nodes..
+    //if (m_nodesAreInvalid) {
+        for (QHash<QAbstractAnimationJob *, QQuickAnimatorProxyJob *>::const_iterator it = m_animatorRoots.constBegin();
+             it != m_animatorRoots.constEnd(); ++it) {
+            qquick_initialize_helper(it.key(), this, false);
+        }
+      //  m_nodesAreInvalid = false;
+    //}
+
+
+
     foreach (QQuickAnimatorJob *job, m_activeLeafAnimations) {
         if (!job->target())
             continue;
@@ -262,7 +297,7 @@ void QQuickAnimatorController::requestSync()
 // These functions are called on the GUI thread.
 void QQuickAnimatorController::startJob(QQuickAnimatorProxyJob *proxy, QAbstractAnimationJob *job)
 {
-    proxy->markJobManagedByController();
+    //proxy->markJobManagedByController();
     m_starting[job] = proxy;
     requestSync();
 }

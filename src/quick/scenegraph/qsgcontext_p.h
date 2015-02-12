@@ -44,39 +44,42 @@
 
 #include <QtCore/QObject>
 #include <QtCore/qabstractanimation.h>
-
+#include <QMutex>
 #include <QtGui/QImage>
 #include <QtGui/QSurfaceFormat>
 
 #include <private/qtquickglobal_p.h>
 #include <private/qrawfont_p.h>
 
-#include <QtQuick/qsgnode.h>
-#include <QtQuick/private/qsgdepthstencilbuffer_p.h>
+//#include <QtQuick/qsgnode.h>
+//#include <QtQuick/private/qsgdepthstencilbuffer_p.h>
 
 QT_BEGIN_NAMESPACE
-
+/*
 namespace QSGAtlasTexture {
     class Manager;
 }
-
+*/
 class QSGContextPrivate;
-class QSGRectangleNode;
+/*class QSGRectangleNode;
 class QSGImageNode;
 class QSGGlyphNode;
 class QSGRenderer;
 class QSGDistanceFieldGlyphCache;
+*/
 class QQuickWindow;
-class QSGTexture;
+/*class QSGTexture;
 class QSGMaterial;
 class QSGMaterialShader;
+*/
 class QSGRenderLoop;
-
+/*
 class QOpenGLContext;
 class QOpenGLFramebufferObject;
 
 class QQuickTextureFactory;
 class QSGDistanceFieldGlyphCacheManager;
+*/
 class QSGContext;
 
 
@@ -87,16 +90,16 @@ public:
     QSGRenderContext(QSGContext *context);
     ~QSGRenderContext();
 
-    QOpenGLContext *openglContext() const { return m_gl; }
+ //   QOpenGLContext *openglContext() const { return m_gl; }
     QSGContext *sceneGraphContext() const { return m_sg; }
 
-    virtual void initialize(QOpenGLContext *context);
+   // virtual void initialize(QOpenGLContext *context);
     virtual void invalidate();
 
-    virtual void renderNextFrame(QSGRenderer *renderer, GLuint fboId);
+   // virtual void renderNextFrame(QSGRenderer *renderer, GLuint fboId);
     virtual void endSync();
 
-    virtual QSharedPointer<QSGDepthStencilBuffer> depthStencilBufferForFbo(QOpenGLFramebufferObject *fbo);
+    /*virtual QSharedPointer<QSGDepthStencilBuffer> depthStencilBufferForFbo(QOpenGLFramebufferObject *fbo);
     QSGDepthStencilBufferManager *depthStencilBufferManager();
 
     virtual QSGDistanceFieldGlyphCache *distanceFieldGlyphCache(const QRawFont &font);
@@ -114,25 +117,25 @@ public:
     static QSGRenderContext *from(QOpenGLContext *context);
 
     bool hasBrokenIndexBufferObjects() const { return m_brokenIBOs; }
-
+*/
 Q_SIGNALS:
     void initialized();
     void invalidated();
 
 public Q_SLOTS:
-    void textureFactoryDestroyed(QObject *o);
+  //  void textureFactoryDestroyed(QObject *o);
 
 protected:
-    QOpenGLContext *m_gl;
+    //QOpenGLContext *m_gl;
     QSGContext *m_sg;
 
     QMutex m_mutex;
-    QHash<QQuickTextureFactory *, QSGTexture *> m_textures;
-    QSet<QSGTexture *> m_texturesToDelete;
-    QSGAtlasTexture::Manager *m_atlasManager;
+    //QHash<QQuickTextureFactory *, QSGTexture *> m_textures;
+    //QSet<QSGTexture *> m_texturesToDelete;
+    //QSGAtlasTexture::Manager *m_atlasManager;
 
-    QSGDepthStencilBufferManager *m_depthStencilManager;
-    QSGDistanceFieldGlyphCacheManager *m_distanceFieldCacheManager;
+    //QSGDepthStencilBufferManager *m_depthStencilManager;
+    //QSGDistanceFieldGlyphCacheManager *m_distanceFieldCacheManager;
 
     QSet<QFontEngine *> m_fontEnginesToClean;
 
@@ -159,10 +162,11 @@ public:
     virtual void renderContextInitialized(QSGRenderContext *renderContext);
     virtual void renderContextInvalidated(QSGRenderContext *renderContext);
     virtual QSGRenderContext *createRenderContext();
-
+/*
     virtual QSGRectangleNode *createRectangleNode();
     virtual QSGImageNode *createImageNode();
     virtual QSGGlyphNode *createGlyphNode(QSGRenderContext *rc, bool preferNativeGlyphNode);
+    */
     virtual QAnimationDriver *createAnimationDriver(QObject *parent);
 
     virtual QSize minimumFBOSize() const;
@@ -172,7 +176,7 @@ public:
     bool isDistanceFieldEnabled() const;
 
     static QSGContext *createDefaultContext();
-    static QQuickTextureFactory *createTextureFactoryFromImage(const QImage &image);
+   // static QQuickTextureFactory *createTextureFactoryFromImage(const QImage &image);
     static QSGRenderLoop *createWindowManager();
 };
 
