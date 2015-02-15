@@ -2206,6 +2206,7 @@ setMimage(m_image,this);
 QQuickWindow * win = window();
         if(win)
         {
+	qDebug("text win");
     //win->beginPaint();
     if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
 {

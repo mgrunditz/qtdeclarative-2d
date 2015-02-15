@@ -77,7 +77,7 @@ QQuickTextDocument::QQuickTextDocument(QQuickItem *parent)
     Q_D(QQuickTextDocument);
     Q_ASSERT(parent);
     Q_ASSERT(qobject_cast<QQuickTextEdit*>(parent));
-    d->document = QPointer<QTextDocument>(qobject_cast<QQuickTextEdit*>(parent)->d_func()->document);
+    //d->document = QPointer<QTextDocument>(qobject_cast<QQuickTextEdit*>(parent)->d_func()->document);
 }
 
 QTextDocument* QQuickTextDocument::textDocument() const

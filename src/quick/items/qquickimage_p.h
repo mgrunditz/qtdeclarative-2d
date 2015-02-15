@@ -43,6 +43,7 @@
 #define QQUICKIMAGE_P_H
 
 #include "qquickimagebase_p.h"
+#include "qquickscalegrid_p_p.h"
 //#include <QtQuick/qsgtextureprovider.h>
 
 QT_BEGIN_NAMESPACE
@@ -56,6 +57,8 @@ class Q_AUTOTEST_EXPORT QQuickImage : public QQuickImageBase
     Q_ENUMS(VAlignment)
 
     Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
+    //Q_PROPERTY(int border READ border WRITE setborder NOTIFY borderChanged)
+    Q_PROPERTY(QQuickScaleGrid *border READ border CONSTANT)
     Q_PROPERTY(qreal paintedWidth READ paintedWidth NOTIFY paintedGeometryChanged)
     Q_PROPERTY(qreal paintedHeight READ paintedHeight NOTIFY paintedGeometryChanged)
     Q_PROPERTY(HAlignment horizontalAlignment READ horizontalAlignment WRITE setHorizontalAlignment NOTIFY horizontalAlignmentChanged)
@@ -77,7 +80,8 @@ public:
 
     FillMode fillMode() const;
     void setFillMode(FillMode);
-
+    QQuickScaleGrid * border() const {return new QQuickScaleGrid;}
+    void setborder(int b);
     qreal paintedWidth() const;
     qreal paintedHeight() const;
 
@@ -97,6 +101,7 @@ public:
 
 Q_SIGNALS:
     void fillModeChanged();
+    void borderChanged();
     void paintedGeometryChanged();
     void horizontalAlignmentChanged(HAlignment alignment);
     void verticalAlignmentChanged(VAlignment alignment);

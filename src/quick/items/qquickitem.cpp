@@ -3948,7 +3948,7 @@ void QQuickItem::updateFromWin(QRect dirtyRect)
 if (win)
 {
     QRect rect(QPoint(0,0),win->geometry().size());
-    //updatePaintNode();
+//    updatePaintNode();
 
     // Painting to the window backbuffer , transformed to screen coordinates
 

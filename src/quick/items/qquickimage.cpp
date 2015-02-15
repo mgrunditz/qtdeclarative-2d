@@ -241,6 +241,16 @@ void QQuickImagePrivate::setImage(const QImage &image)
 
     \sa {Qt Quick Examples - Image Elements}
 */
+
+/*int QQuickImage::border() const
+{
+	return (0);
+}
+*/
+void QQuickImage::setborder( int b )
+{
+
+}
 QQuickImage::FillMode QQuickImage::fillMode() const
 {
     Q_D(const QQuickImage);
@@ -489,7 +499,10 @@ void QQuickImage::updatePaintedGeometry()
     }
     emit paintedGeometryChanged();
 }
+/*void QQuickImage::borderChanged()
+{
 
+}*/
 void QQuickImage::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     QQuickImageBase::geometryChanged(newGeometry, oldGeometry);
@@ -510,6 +523,19 @@ void QQuickImage::updatePaintNode()
        setMimage(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage(),this);
        setWidth(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).width());
        setHeight(d->pix.scaled(QSize(d->pix.height()*scale(),d->pix.width()*scale())).height());
+QQuickWindow * win = parentItem()->window();
+        if(win)
+        {
+    qDebug("image window");
+    if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+{
+    QPainter pnter (QQuickWindowPrivate::get(win)->m_backingStore->paintDevice());
+    pnter.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage());
+    //win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), m_image);
+    QQuickWindowPrivate::get(win)->m_backingStore->flush(QRect((int)mapToItem(window()->contentItem(),QPoint(0,0)).x(),(int) mapToItem(window()->contentItem(),QPoint(0,0)).y(),d->width,d->height));
+    //win->endPaint();
+}
+}
    /*     QQuickWindow * win = window();
         if(win)
         {

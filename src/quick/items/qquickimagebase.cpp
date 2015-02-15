@@ -214,8 +214,8 @@ void QQuickImageBase::load()
         resolve2xLocalFile(d->url, targetDevicePixelRatio, &loadUrl, &d->devicePixelRatio);
        //TODO Need to support proper image paths
         //qDebug() << "filename: " << d->url.fileName();
-        qDebug() << "filename: " << d->url.toString();
-		d->pix = QPixmap(d->url.toLocalFile());
+        qDebug() << "filename: " <<  QQmlFile::urlToLocalFileOrQrc(d->url);//d->url.toString();
+		d->pix = QPixmap( QQmlFile::urlToLocalFileOrQrc(d->url));//d->url.toLocalFile());
         setMimage(d->pix.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied),this);
 
     }

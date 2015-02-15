@@ -67,19 +67,24 @@ public:
         , m_visible(isVisible())
         , m_visibility(AutomaticVisibility)
     {
-        connect(this, &QWindow::visibleChanged, this, &QQuickWindowQmlImpl::visibleChanged);
-        connect(this, &QWindow::visibilityChanged, this, &QQuickWindowQmlImpl::visibilityChanged);
+/*        connect(this, &QWindow::visibleChanged, this, &QQuickWindowQmlImpl::visibleChanged);
+        connect(this, &QWindow::visibilityChanged, this, &QQuickWindowQmlImpl::visibilityChanged);*/
     }
 
     void setVisible(bool visible) {
+	qDebug("set visible");
+            QQuickWindow::setVisible(visible);
         if (!m_complete)
             m_visible = visible;
         else if (!transientParent() || transientParent()->isVisible())
             QQuickWindow::setVisible(visible);
-    }
+  
+  }
 
     void setVisibility(Visibility visibility)
     {
+         qDebug("set visibility");
+            QQuickWindow::setVisibility(visibility);
         if (!m_complete)
             m_visibility = visibility;
         else
@@ -108,18 +113,19 @@ protected:
     }
 
     void componentComplete() {
-        m_complete = true;
+        /*m_complete = true;
         if (transientParent() && !transientParent()->isVisible()) {
             connect(transientParent(), &QQuickWindow::visibleChanged, this,
                     &QQuickWindowQmlImpl::setWindowVisibility, Qt::QueuedConnection);
         } else {
             setWindowVisibility();
-        }
+        }*/
     }
 
 private Q_SLOTS:
     void setWindowVisibility()
     {
+	qDebug("set window visibility");
         if (transientParent() && !transientParent()->isVisible())
             return;
 

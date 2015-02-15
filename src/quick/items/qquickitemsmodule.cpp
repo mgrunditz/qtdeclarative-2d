@@ -48,11 +48,11 @@
 #include "qquickfocusscope_p.h"
 #include "qquicktext_p.h"
 #include "qquicktextinput_p.h"
-//#include "qquicktextedit_p.h"
-//#include "qquicktextdocument.h"
+#include "qquicktextedit_p.h"
+#include "qquicktextdocument.h"
 #include "qquickimage_p.h"
 //#include "qquickborderimage_p.h"
-//#include "qquickscalegrid_p_p.h"
+#include "qquickscalegrid_p_p.h"
 #include "qquickmousearea_p.h"
 #include "qquickpincharea_p.h"
 #include "qquickflickable_p.h"
@@ -150,6 +150,7 @@ static void qt_quickitems_defineModule(const char *uri, int major, int minor)
     qmlRegisterType<QQuickGrid>(uri,major,minor,"Grid");
     qmlRegisterType<QQuickGridView>(uri,major,minor,"GridView");
     qmlRegisterType<QQuickImage>(uri,major,minor,"Image");
+    qmlRegisterType<QQuickImage>(uri,major,minor,"BorderImage");
     qmlRegisterType<QQuickItem>(uri,major,minor,"Item");
     qmlRegisterType<QQuickListView>(uri,major,minor,"ListView");
     qmlRegisterType<QQuickLoader>(uri,major,minor,"Loader");
@@ -167,9 +168,9 @@ static void qt_quickitems_defineModule(const char *uri, int major, int minor)
     qmlRegisterUncreatableType<QQuickBasePositioner>(uri,major,minor,"Positioner",
                                                   QStringLiteral("Positioner is an abstract type that is only available as an attached property."));
 //#ifndef QT_NO_VALIDATOR
-    qmlRegisterType<QQuickIntValidator>(uri,major,minor,"IntValidator");
-    qmlRegisterType<QQuickDoubleValidator>(uri,major,minor,"DoubleValidator");
-    qmlRegisterType<QRegExpValidator>(uri,major,minor,"RegExpValidator");
+  //  qmlRegisterType<QQuickIntValidator>(uri,major,minor,"IntValidator");
+  //  qmlRegisterType<QQuickDoubleValidator>(uri,major,minor,"DoubleValidator");
+  //  qmlRegisterType<QRegExpValidator>(uri,major,minor,"RegExpValidator");
 //#endif
     qmlRegisterType<QQuickRectangle>(uri,major,minor,"Rectangle");
   qmlRegisterType<QQuickRepeater>(uri,major,minor,"Repeater");
@@ -194,16 +195,16 @@ static void qt_quickitems_defineModule(const char *uri, int major, int minor)
   qmlRegisterType<QQuickTransform>();
   qmlRegisterType<QQuickPathElement>();
   qmlRegisterType<QQuickCurve>();
-//  qmlRegisterType<QQuickScaleGrid>();
+  qmlRegisterType<QQuickScaleGrid>();
   qmlRegisterType<QQuickTextLine>();
 #ifndef QT_NO_VALIDATOR
- qmlRegisterType<QValidator>();
+// qmlRegisterType<QValidator>();
 #endif
   qmlRegisterType<QQuickPen>();
     qmlRegisterType<QQuickFlickableVisibleArea>();
     qRegisterMetaType<QQuickAnchorLine>("QQuickAnchorLine");
 
- // qmlRegisterType<QQuickTextDocument>();
+  qmlRegisterType<QQuickTextDocument>();
 
 
  // qmlRegisterUncreatableType<QQuickKeyNavigationAttached>(uri,major,minor,"KeyNavigation",QQuickKeyNavigationAttached::tr("KeyNavigation is only available via attached properties"));
@@ -253,17 +254,17 @@ qmlRegisterType<QQuickPinchEvent>();
 
     qmlRegisterType<QQuickItem, 1>(uri, 2, 1,"Item");
   qmlRegisterType<QQuickGrid, 1>(uri, 2, 1, "Grid");
- // qmlRegisterUncreatableType<QQuickItemView, 1>(uri, 2, 1, "ItemView", QQuickItemView::tr("ItemView is an abstract base class"));
- // qmlRegisterUncreatableType<QQuickItemView, 2>(uri, 2, 3, "ItemView", QQuickItemView::tr("ItemView is an abstract base class"));
+  qmlRegisterUncreatableType<QQuickItemView, 1>(uri, 2, 1, "ItemView", QQuickItemView::tr("ItemView is an abstract base class"));
+  qmlRegisterUncreatableType<QQuickItemView, 2>(uri, 2, 3, "ItemView", QQuickItemView::tr("ItemView is an abstract base class"));
     qmlRegisterType<QQuickListView, 1>(uri, 2, 1, "ListView");
  qmlRegisterType<QQuickGridView, 1>(uri, 2, 1, "GridView");
- // qmlRegisterType<QQuickTextEdit, 1>(uri, 2, 1, "TextEdit");
+  qmlRegisterType<QQuickTextEdit, 1>(uri, 2, 1, "TextEdit");
 
     qmlRegisterType<QQuickText, 2>(uri, 2, 2, "Text");
- // qmlRegisterType<QQuickTextEdit, 2>(uri, 2, 2, "TextEdit");
+  qmlRegisterType<QQuickTextEdit, 2>(uri, 2, 2, "TextEdit");
 
     qmlRegisterType<QQuickText, 3>(uri, 2, 3, "Text");
- // qmlRegisterType<QQuickTextEdit, 3>(uri, 2, 3, "TextEdit");
+  qmlRegisterType<QQuickTextEdit, 3>(uri, 2, 3, "TextEdit");
     qmlRegisterType<QQuickImage, 1>(uri, 2, 3,"Image");
 }
 

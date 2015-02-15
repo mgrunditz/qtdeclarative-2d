@@ -485,11 +485,16 @@ void QQuickRectangle::setColor(const QColor &c)
         return;
     d->color = c;
     emit colorChanged();
+    updatePaintNode();
 }
 
 
 void QQuickRectangle::updatePaintNode()
 {
+	qDebug("paintnode rect1");
+    QQuickWindow * win =window();
+    if (win)
+	qDebug("Rect has win");
   //TODO m_img is the potential global pixmap, not used here...
     if ((int)d_func()->width>0 && (int)d_func()->height>0)
     {
@@ -510,6 +515,17 @@ void QQuickRectangle::updatePaintNode()
     p.drawRect(0,0,d_func()->width,d_func()->height);
     p.end();
     setMimage(timg,this);
+//QQuickWindow * win = window();
+        if(win)
+        {
+    if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+{
+	qDebug("paintnode rect2");
+    QPainter pnter (QQuickWindowPrivate::get(win)->m_backingStore->paintDevice());
+    pnter.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), timg);
+    QQuickWindowPrivate::get(win)->m_backingStore->flush(QRect((int)mapToItem(window()->contentItem(),QPoint(0,0)).x(),(int) mapToItem(window()->contentItem(),QPoint(0,0)).y(),d_func()->width,d_func()->height));
+}
+}
     /*QQuickWindow * win = window();
 	if(win)
 	{

@@ -76,7 +76,7 @@
 
 QT_BEGIN_NAMESPACE
 
-
+QQuickItem *fContent;
 bool QQuickWindowPrivate::defaultAlphaBuffer(0);
 
 void forceUpdate(QQuickItem *item,QRect dirtyRect);
@@ -371,6 +371,7 @@ void forceUpdate(QQuickItem *item,QRect dirtyRect)
     
      if (item->isVisible()  && QQuickItem::ItemHasContents)
      {
+	if (item != fContent)
         item->updateFromWin(dirtyRect);
 
      }
@@ -403,6 +404,7 @@ void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
 {
     QML_MEMORY_SCOPE_STRING("SceneGraph");
     Q_Q(QQuickWindow);
+    fContent = contentItem;
     qDebug("renderSceneGraph");
     animationController->advance();
      emit q->beforeRendering();
@@ -418,10 +420,10 @@ QRect rect(QPoint(), q->geometry().size());
     QPaintDevice *device = m_backingStore->paintDevice();
     if (device)
 	{
-   //if (!q->qpnter)
       q->qpnter = new QPainter(device);
    if (!q->qpnter->isActive())
     q->qpnter->begin(device);
+    q->qpnter->fillRect(rect,clearColor);
     forceUpdate(contentItem,rect);
     q->qpnter->end();
         }
@@ -509,7 +511,23 @@ void QQuickWindowPrivate::init(QQuickWindow *c, QQuickRenderControl *control)
     //QPaintDevice *device = m_backingStore->paintDevice();
     //if (device)
       // q->qpnter=new QPainter(device);
-	 QRect rect(QPoint(), QSize(800,480));
+	 QRect rect = q->geometry();
+m_backingStore->beginPaint(rect);
+
+    QPaintDevice *device = m_backingStore->paintDevice();
+    if (device)
+      {
+   //if (!q->qpnter)
+      q->qpnter = new QPainter(device);
+   if (!q->qpnter->isActive())
+    q->qpnter->begin(device);
+    q->qpnter->fillRect(rect,QColor("white"));
+    qDebug("clear white");
+    //forceUpdate(contentItem,rect);
+    q->qpnter->end();
+       }
+    m_backingStore->flush(rect);
+	
     animationController = new QQuickAnimatorController();
     animationController->m_window = q;
     m_image = QImage(q->geometry().size(), QImage::Format_RGB32);
@@ -563,7 +581,9 @@ void QQuickWindowPrivate::init(QQuickWindow *c, QQuickRenderControl *control)
       q->qpnter = new QPainter(device);
    if (!q->qpnter->isActive())
     q->qpnter->begin(device);
-    forceUpdate(contentItem,rect);
+    q->qpnter->fillRect(rect,QColor("white"));
+    qDebug("clear white");
+    //forceUpdate(contentItem,rect);
     q->qpnter->end();
         }
     m_backingStore->flush(rect);
@@ -1153,14 +1173,14 @@ QQuickWindow::QQuickWindow(QQuickWindowPrivate &dd, QWindow *parent)
     : QWindow(dd, parent)
 {
     Q_D(QQuickWindow);
-	 if (parent)
+/*	 if (parent)
         setGeometry(QRect(0, 0, 640, 480));
     else {
         const QSize baseSize = QSize(640, 480);
         setGeometry(QRect(geometry().topLeft(), baseSize));
 
     }
-
+*/
     d->init(this);
 }
 
@@ -3127,7 +3147,29 @@ void QQuickWindow::setColor(const QColor &color)
     Q_D(QQuickWindow);
     if (color == d->clearColor)
         return;
+/*qDebug("setColor");
+if (d->m_backingStore) {
+    d->m_backingStore->beginPaint(geometry());
+    qDebug("backingstore");
+    if (d->m_backingStore->paintDevice()->paintEngine())
+{
+qDebug("paintengine");
+    d->m_backingStore->beginPaint(geometry());
 
+    QPaintDevice *device = d->m_backingStore->paintDevice();
+    if (device)
+        {
+	qDebug("if device");
+      qpnter = new QPainter(device);
+   if (!qpnter->isActive())
+   qpnter->begin(device);
+   qpnter->fillRect(geometry(),color);
+   qpnter->end();
+	}
+
+	d->m_backingStore->flush(geometry());
+}
+}*/
     if (color.alpha() != d->clearColor.alpha()) {
         QSurfaceFormat fmt = requestedFormat();
         if (color.alpha() < 255)

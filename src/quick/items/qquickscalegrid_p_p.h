@@ -42,7 +42,7 @@
 #ifndef QQUICKSCALEGRID_P_P_H
 #define QQUICKSCALEGRID_P_P_H
 
-#include "qquickborderimage_p.h"
+//#include "qquickborderimage_p.h"
 
 #include <QtQml/qqml.h>
 #include <QtCore/qobject.h>
@@ -89,7 +89,7 @@ private:
     int _right;
     int _bottom;
 };
-
+/*
 class Q_AUTOTEST_EXPORT QQuickGridScaledImage
 {
 public:
@@ -119,7 +119,7 @@ private:
     QQuickBorderImage::TileMode _v;
     QString _pix;
 };
-
+*/
 QT_END_NAMESPACE
 
 QML_DECLARE_TYPE(QQuickScaleGrid)

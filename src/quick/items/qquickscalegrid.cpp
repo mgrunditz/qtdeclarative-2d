@@ -95,7 +95,7 @@ void QQuickScaleGrid::setBottom(int pos)
         emit borderChanged();
     }
 }
-
+/*
 QQuickGridScaledImage::QQuickGridScaledImage()
 : _l(-1), _r(-1), _t(-1), _b(-1),
   _h(QQuickBorderImage::Stretch), _v(QQuickBorderImage::Stretch)
@@ -214,5 +214,5 @@ QString QQuickGridScaledImage::pixmapUrl() const
 {
     return _pix;
 }
-
+*/
 QT_END_NAMESPACE
