@@ -41,7 +41,7 @@
 
 #ifndef QQUICKIMAGEBASE_P_H
 #define QQUICKIMAGEBASE_P_H
-
+#include <QNetworkAccessManager>
 #include "qquickimplicitsizeitem_p.h"
 #include <private/qtquickglobal_p.h>
 
@@ -78,7 +78,8 @@ public:
     void setCache(bool);
 
     QImage image() const;
-
+    QNetworkAccessManager *networkAccessManager();
+    QNetworkAccessManager *accessManager;
     virtual void setSourceSize(const QSize&);
     QSize sourceSize() const;
     void resetSourceSize();
@@ -87,6 +88,8 @@ public:
     bool mirror() const;
 
     void resolve2xLocalFile(const QUrl &url, qreal targetDevicePixelRatio, QUrl *sourceUrl, qreal *sourceDevicePixelRatio);
+public slots:
+   void replyFinished(QNetworkReply * rep);
 
 Q_SIGNALS:
     void sourceChanged(const QUrl &);
