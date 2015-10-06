@@ -52,6 +52,7 @@
 #include <QtGui/qfont.h>
 #include <QtGui/qaccessible.h>
 #include <QImage>
+#include <QMutex>
 
 QT_BEGIN_NAMESPACE
 
@@ -155,6 +156,7 @@ class Q_QUICK_EXPORT QQuickItem :  public QObject, public QQmlParserStatus
     Q_CLASSINFO("qt_HasQmlAccessors", "true")
 
 public:
+    QMutex localmut;
     QImage getMimage();
     void updateFromWin(QRect dirtyRect);
     void setMimage(QImage img,QQuickItem *it);
@@ -202,6 +204,9 @@ public:
 
     QQuickItem(QQuickItem *parent = 0);
     virtual ~QQuickItem();
+
+    void setBufferSize(int bsize,int w, int h);
+    void setPixels(char * pixels);
 
     QQuickWindow *window() const;
     QQuickItem *parentItem() const;
@@ -385,6 +390,11 @@ Q_SIGNALS:
 
 protected:
     virtual bool event(QEvent *);
+    char * pixelbuffer;
+    bool parentprocess;
+    int buffersize;
+    int bufferwidth;
+    int bufferheight;
 
     bool isComponentComplete() const;
     virtual void itemChange(ItemChange, const ItemChangeData &);

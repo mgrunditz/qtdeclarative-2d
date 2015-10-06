@@ -128,6 +128,8 @@ SOURCES += \
      $$PWD/qquickitemviewtransition.cpp \
     $$PWD/qquickwindowmodule.cpp \
     $$PWD/qquickscreen.cpp \
+     $$PWD/asmfunc7.S \
+
 #    #$$PWD/qquickframebufferobject.cpp
 ##
 #SOURCES += \

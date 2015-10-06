@@ -105,7 +105,7 @@ public:
 
     QQuickWindowPrivate();
     virtual ~QQuickWindowPrivate();
-
+    void forceUpdate(QQuickItem *item,QRect dirtyRect);
     void init(QQuickWindow *, QQuickRenderControl *control = 0);
 
     QQuickRootItem *contentItem;

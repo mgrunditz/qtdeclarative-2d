@@ -2182,48 +2182,72 @@ void QQuickText::triggerPreprocess()
 void QQuickText::updatePaintNode()
 {
     Q_D(QQuickText);
+ if ((int)width()>0 && (int)height()>0)
+{
 qDebug("QQuickText::updatePaintNode");
 QVector <QTextLayout::FormatRange> fmtlist;
-
+QTextOption testopt;
+testopt.setWrapMode(QTextOption::WordWrap);
+if (d->richText)
+d->extra->doc->setDefaultTextOption(testopt);
+else
+d->layout.setTextOption(testopt);
+qDebug("set text opt");
 QTextLayout::FormatRange extrafmt;
 if (!d->text.isEmpty())
 {
 extrafmt.start = 0;
 extrafmt.length = d->text.length();
 extrafmt.format.setForeground(QColor::fromRgba(d->color));
-
+qDebug("set text color");
 fmtlist.append(extrafmt);
 
 }
-   if (width()>0 && height()>0)
+
+  if (width()>0 && height()>0)
 {
+     qDebug("text width >0");
     //if (m_image.isNull())
-    m_image = QImage(width(),height()+10,QImage::Format_ARGB32_Premultiplied);
+ const qreal dy = QQuickTextUtil::alignedY(d->layedOutTextRect.height(), height(), d->vAlign);
+//setY(y()+dy);
+    m_image = QImage(width(),height(),QImage::Format_ARGB32_Premultiplied);
+//m_image.fill(0);
+//    m_image = QImage((int)floor(width()),(int)floor(height()),QImage::Format_ARGB32_Premultiplied);
 m_image.fill(0);
 QPainter p(&m_image);
-d->layout.draw(&p,QPoint(0,0),fmtlist);
-setMimage(m_image,this);
-QQuickWindow * win = window();
-        if(win)
-        {
-	qDebug("text win");
-    //win->beginPaint();
-    if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
+if (d->richText)
 {
-    QPainter pnter (QQuickWindowPrivate::get(win)->m_backingStore->paintDevice());
-    pnter.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->m_image);
-    //win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), m_image);
-    QQuickWindowPrivate::get(win)->m_backingStore->flush(QRect((int)mapToItem(window()->contentItem(),QPoint(0,0)).x(),(int) mapToItem(window()->contentItem(),QPoint(0,0)).y(),d->width,d->height));
-    //win->endPaint();
+const qreal dx = QQuickTextUtil::alignedX(d->layedOutTextRect.width(), width(), effectiveHAlign());
+//setX(x()+dx);
+//d->extra->doc->drawContents(&p,QRect(dx,dy,width(),height()));
+qDebug("rt draw");
+d->extra->doc->drawContents(&p,QRect(0,0,(int)floor(width()),(int)floor(height())));
+qDebug() << "text rt w: " << width() << "text h" << height();
+qDebug("rt draw end");
+}
+else
+{
+const qreal dx = QQuickTextUtil::alignedX(d->lineWidth, width(), effectiveHAlign());
+//setX(x()+dx);
+//d->layout.draw(&p,QPoint(dx,dy),fmtlist);
+d->layout.draw(&p,QPoint(0,0),fmtlist);
+}
+//setMimage(m_image,this);
+qDebug("before set text pixels");
+qDebug() << "text w: " << width() << "text h" << height();
+int bsize  = m_image.width()*m_image.height()*4;
+setBufferSize(bsize,m_image.width(),m_image.height());
+setPixels((char*)m_image.bits());
+qDebug("after set text pixels");
+//QPainter rendPaint(d_func()->sceneGraphRenderContext()->renderImage);
+//rendPaint.begin(d_func()->sceneGraphRenderContext()->renderImage);
+  //  rendPaint.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), m_image);
+//rendPaint.end();
 }
 }
 
-     //if(QQuickWindowPrivate::get(window())->contentItem()->isComponentComplete())
-     //if(window()->contentItem()->isVisible())
-     //QQuickWindowPrivate::get(window())->renderSceneGraph(window()->size());
-//update();
 }
-}
+
 
 void QQuickText::updatePolish()
 {

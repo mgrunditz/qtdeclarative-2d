@@ -14,7 +14,7 @@ SUBDIRS += \
 SUBDIRS += \
 #    plugins \
 #    imports \
-    qmldevtools
+#    qmldevtools
 
 #qtHaveModule(quick):qtHaveModule(widgets): SUBDIRS += quickwidgets
 

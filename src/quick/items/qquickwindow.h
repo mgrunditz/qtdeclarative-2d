@@ -49,6 +49,12 @@
 #include <QtGui/qevent.h>
 #include <QMutex>
 #include <QPainter>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <sys/mman.h>
+#include <sys/ioctl.h>
+
+
 QT_BEGIN_NAMESPACE
 
 class QQuickItem;
@@ -80,6 +86,12 @@ public:
     QMutex winmutex;
     QRect dirtyZone;
     Q_DECLARE_FLAGS(CreateTextureOptions, CreateTextureOption)
+     char * fbp;
+    char * fbbackbuffer;
+    int screenwidth;
+    int screenheight;
+    int screensize;
+
 
     enum SceneGraphError {
         ContextNotAvailable = 1
@@ -88,7 +100,7 @@ public:
 
     QQuickWindow(QWindow *parent = 0);
     //QQuickWindow(QScreen *screen);
-
+    void createfb();
     virtual ~QQuickWindow();
     void beginPaint();
     void endPaint();

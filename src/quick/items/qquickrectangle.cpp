@@ -491,57 +491,52 @@ void QQuickRectangle::setColor(const QColor &c)
 
 void QQuickRectangle::updatePaintNode()
 {
-	qDebug("paintnode rect1");
-    QQuickWindow * win =window();
-    if (win)
-	qDebug("Rect has win");
-  //TODO m_img is the potential global pixmap, not used here...
-    if ((int)d_func()->width>0 && (int)d_func()->height>0)
-    {
-/*	if (mimg.isNull())
-           mimg = QImage((int)d_func()->width,(int)d_func()->height, QImage::Format_ARGB32_Premultiplied);
-	mimg.fill(0);
-    if (!mimg.isNull())
-    {*/
-    QImage timg = QImage((int)d_func()->width,(int)d_func()->height, QImage::Format_ARGB32_Premultiplied);
-    if (!timg.isNull())
-    {
+        qDebug("paintnode rect1");
+    QQuickWindow *win;
+    QQuickItemPrivate * pit= QQuickItemPrivate::get(this);
+    QImage timg;
+    if (width()>0 && height()>0)
+{
+    qDebug("painting rect");
+    qDebug() << "rect w: " << width() << "rect h: " << height();
+    timg = QImage(width(),height(), QImage::Format_ARGB32_Premultiplied);
     timg.fill(0);
-    QPainter p(&timg);
+   QPainter p(&timg);
     if (!p.isActive())
     p.begin(&timg);
-        p.setOpacity(1.0);
+        //p.setOpacity(1.0);
+ if (gradient())
+        {
+                QQuickGradient *grad = gradient();
+                QGradientStops stops=grad->gradientStops();
+                QLinearGradient gradi(QPointF(0,0),QPointF(1,1));//(QPoint(0,0),QPoint(width(),height()));
+                gradi.setStops(stops);
+                int j=0;
+                for (j=0;j<stops.size();j++)
+                {
+
+                        gradi.setColorAt(stops.at(j).first,stops.at(j).second);
+                        gradi.setCoordinateMode(QGradient::ObjectBoundingMode);
+                        qDebug("gradi");
+                        qDebug() << stops.at(j).second << stops.at(j).first;
+        }
+      p.setBrush(QBrush(gradi));
+        p.fillRect(QRect(0,0,d_func()->width,d_func()->height),gradi);
+        } else {
+
+    if (color()!=QColor())
+        {
       p.setBrush(color());
     p.drawRect(0,0,d_func()->width,d_func()->height);
-    p.end();
-    setMimage(timg,this);
-//QQuickWindow * win = window();
-        if(win)
-        {
-    if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
-{
-	qDebug("paintnode rect2");
-    QPainter pnter (QQuickWindowPrivate::get(win)->m_backingStore->paintDevice());
-    pnter.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), timg);
-    QQuickWindowPrivate::get(win)->m_backingStore->flush(QRect((int)mapToItem(window()->contentItem(),QPoint(0,0)).x(),(int) mapToItem(window()->contentItem(),QPoint(0,0)).y(),d_func()->width,d_func()->height));
-}
-}
-    /*QQuickWindow * win = window();
-	if(win)
-	{
-    win->beginPaint();
-if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
-{
-    qDebug("drawpaint");
-    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), timg);
-    win->endPaint();
-}
-}*/
     }
-    }
-   // }
+}
+        p.end();
+    //setMimage(timg,this);
+    setBufferSize(timg.width()*timg.height()*4,timg.width(),timg.height());
+    setPixels((char*)timg.bits());
+ }
 
-}
+    }
 
 
 

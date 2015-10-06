@@ -209,6 +209,37 @@ QQuickItem::UpdatePaintNodeData::UpdatePaintNodeData()
 QQuickRootItem::QQuickRootItem()
 {
 }
+void QQuickWindow::createfb()
+{
+    struct fb_var_screeninfo vinfo;
+    struct fb_fix_screeninfo finfo;
+    int fbfd=0;
+    fbfd = open("/dev/fb0", O_RDWR);
+    if (fbfd == -1) {
+        perror("Error: cannot open framebuffer device");
+        exit(1);
+    }
+    if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
+        perror("Error reading fixed information");
+        exit(2);
+    }
+
+    // Get variable screen information
+    if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
+        perror("Error reading variable information");
+        exit(3);
+    }
+    screenwidth = vinfo.xres;
+    screenheight = vinfo.yres;
+
+    screensize = (vinfo.yres * (vinfo.xres* vinfo.bits_per_pixel) / 8);
+    fbbackbuffer =  (char*) malloc(screensize); 
+    fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd,     0); 
+    memset(fbp,0,screensize);
+    memset(fbbackbuffer,0,screensize);
+    qDebug() << "screensize: " << screensize;
+
+}
 
 /*! \reimp */
 void QQuickWindow::exposeEvent(QExposeEvent *)
@@ -218,37 +249,8 @@ void QQuickWindow::exposeEvent(QExposeEvent *)
         d->windowManager->exposureChanged(this);
 
     QRect rect(QPoint(), geometry().size());
-    /* if (d->m_backingStore) {
-    d->m_backingStore->resize(rect.size());
-    if (d->m_backingStore->paintDevice()->paintEngine())
-{
-    d->m_backingStore->resize(rect.size());
 
-    d->m_backingStore->beginPaint(rect);
-
-    QPaintDevice *device = d->m_backingStore->paintDevice();
-    if (device)
-        {
-      qpnter = new QPainter(device);
-   if (!qpnter->isActive())
-    qpnter->begin(device);
-    forceUpdate(d->contentItem,rect);
-    qpnter->end();
-        }
-    d->m_backingStore->flush(rect);
-}
-} */
-
-    d->m_backingStore->resize(rect.size());
-
-    d->m_backingStore->beginPaint(rect);
-
-    QPaintDevice *device = d->m_backingStore->paintDevice();
-
-    d->m_backingStore->endPaint();
-    d->m_backingStore->flush(rect);
-
-}
+    }
 
 /*! \reimp */
 void QQuickWindow::resizeEvent(QResizeEvent *ev)
@@ -269,16 +271,7 @@ void QQuickWindow::showEvent(QShowEvent *)
         d->windowManager->show(this);
 
 	QRect rect(QPoint(), geometry().size());
-    d->m_backingStore->resize(rect.size());
-
-    d->m_backingStore->beginPaint(rect);
-
-
-
-    d->m_backingStore->endPaint();
-    d->m_backingStore->flush(rect);
-
-}
+   }
 
 /*! \reimp */
 void QQuickWindow::hideEvent(QHideEvent *)
@@ -364,6 +357,29 @@ void QQuickWindow::forcePolish()
     forcePolishHelper(d->contentItem);
 }
 
+
+void QQuickWindowPrivate::forceUpdate(QQuickItem *item,QRect dirtyRect)
+{
+    //if (item->flags() & QQuickItem::ItemHasContents)
+      //  QQuickItemPrivate::get(item)->dirty(QQuickItemPrivate::ChildrenUpdateMask);
+   if (item)
+    {
+        qDebug("before isVisible QQuickWindow");
+     if (/*item->isVisible()  && */QQuickItem::ItemHasContents)
+     {
+        if (item != contentItem)
+            item->updateFromWin(dirtyRect);
+        qDebug("QQuickWindow: updateFromWin");
+
+     }
+    QList <QQuickItem *> items = QQuickItemPrivate::get(item)->paintOrderChildItems();
+    for (int i=0; i<items.size(); ++i)
+        forceUpdate(items.at(i),dirtyRect);
+ }
+}
+
+
+
 void forceUpdate(QQuickItem *item,QRect dirtyRect)
 {
     if (item->flags() & QQuickItem::ItemHasContents)
@@ -400,7 +416,7 @@ void QQuickWindowPrivate::syncSceneGraph()
 }
 
 
-void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
+/*void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
 {
     QML_MEMORY_SCOPE_STRING("SceneGraph");
     Q_Q(QQuickWindow);
@@ -434,6 +450,44 @@ QRect rect(QPoint(), q->geometry().size());
     m_backingStore->flush(rect);
     emit q->afterRendering();
 }
+*/
+
+
+
+void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
+{
+    qDebug("renderSceneGraph");
+    QML_MEMORY_SCOPE_STRING("SceneGraph");
+    Q_Q(QQuickWindow);
+    //QMutexLocker locker(&q->localmut);
+    QRect rect(QPoint(), q->geometry().size());
+    int i,j;
+    fContent = contentItem;
+    animationController->advance();
+    emit q->beforeRendering();
+    if (q->fbbackbuffer)
+    {
+        qDebug("forceupdate");
+        forceUpdate(contentItem,rect);
+        qDebug("after forceupdate");
+        //forceUpdate(contentItem,rect);
+        j=0;
+        /*for (i=0;i<q->geometry().height();i++)
+        {
+            j = q->screenwidth*i*4;
+            memcpy(q->fbp,q->fbbackbuffer,q->screensize);
+            memcpy(q->fbp+j,q->fbbackbuffer+j,q->geometry().width()*4);
+         
+        }*/
+        qDebug("QQuickWindow: memcpy");
+        memcpy(q->fbp,q->fbbackbuffer,q->screensize);
+        memset(q->fbbackbuffer,0,q->screensize);
+   }
+
+    emit q->afterRendering();
+}
+
+
 
 void QQuickWindow::endPaint()
 {
@@ -506,28 +560,8 @@ void QQuickWindowPrivate::init(QQuickWindow *c, QQuickRenderControl *control)
     q_ptr = c;
 
     Q_Q(QQuickWindow);
-    q->create();
-    m_backingStore = new QBackingStore(q);
-    //QPaintDevice *device = m_backingStore->paintDevice();
-    //if (device)
-      // q->qpnter=new QPainter(device);
-	 QRect rect = q->geometry();
-m_backingStore->beginPaint(rect);
-
-    QPaintDevice *device = m_backingStore->paintDevice();
-    if (device)
-      {
-   //if (!q->qpnter)
-      q->qpnter = new QPainter(device);
-   if (!q->qpnter->isActive())
-    q->qpnter->begin(device);
-    q->qpnter->fillRect(rect,QColor("white"));
-    qDebug("clear white");
-    //forceUpdate(contentItem,rect);
-    q->qpnter->end();
-       }
-    m_backingStore->flush(rect);
-	
+    //q->create();
+   
     animationController = new QQuickAnimatorController();
     animationController->m_window = q;
     m_image = QImage(q->geometry().size(), QImage::Format_RGB32);
@@ -565,31 +599,7 @@ m_backingStore->beginPaint(rect);
     QObject::connect(context, SIGNAL(invalidated()), q, SIGNAL(sceneGraphInvalidated()), Qt::DirectConnection);
     QObject::connect(context, SIGNAL(invalidated()), q, SLOT(cleanupSceneGraph()), Qt::DirectConnection);
 //BANAN
-    m_backingStore = new QBackingStore(q);
-    if (m_backingStore) {
-    if (m_backingStore->paintDevice())
-{
-    m_backingStore->resize(rect.size());
-
-    m_image = QImage(q->geometry().size(), QImage::Format_RGB32);
-    m_backingStore->beginPaint(rect);
-
-    QPaintDevice *device = m_backingStore->paintDevice();
-    if (device)
-        {
-   //if (!q->qpnter)
-      q->qpnter = new QPainter(device);
-   if (!q->qpnter->isActive())
-    q->qpnter->begin(device);
-    q->qpnter->fillRect(rect,QColor("white"));
-    qDebug("clear white");
-    //forceUpdate(contentItem,rect);
-    q->qpnter->end();
-        }
-    m_backingStore->flush(rect);
-}
-}
-
+  
 }
 
 /*!
@@ -1161,6 +1171,7 @@ QQuickWindow::QQuickWindow(QWindow *parent)
     : QWindow(*(new QQuickWindowPrivate), parent)
 {
     Q_D(QQuickWindow);
+    createfb();
     d->init(this);
 }
 

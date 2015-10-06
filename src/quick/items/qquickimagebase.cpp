@@ -224,7 +224,8 @@ void QQuickImageBase::load()
         //qDebug() << "filename: " << d->url.fileName();
         qDebug() << "filename: " <<  QQmlFile::urlToLocalFileOrQrc(d->url);//d->url.toString();
 		d->pix = QPixmap( QQmlFile::urlToLocalFileOrQrc(d->url));//d->url.toLocalFile());
-        setMimage(d->pix.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied),this);
+        //setMimage(d->pix.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied),this);
+     requestFinished();
        }
     }
 }

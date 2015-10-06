@@ -517,146 +517,29 @@ QRectF QQuickImage::boundingRect() const
 void QQuickImage::updatePaintNode()
 {
     Q_D(QQuickImage);
+ if (d->pix.toImage().isNull())
     load();
     if (!d->pix.toImage().isNull())
     {
-       setMimage(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage(),this);
+       //setMimage(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage(),this);
+       //setMimage(d->pix.scaled(QSize(width(),height())).toImage(),this);
+        qDebug() << "Image: width: " << width() << "height: " << height();
+       setBufferSize(d->pix.scaled(QSize(width(),height())).toImage().width()*d->pix.scaled(QSize(width(),height())).toImage().height()*4,d->pix.scaled(QSize(width(),height())).toImage().width(),d->pix.scaled(QSize(width(),height())).toImage().height());
+       setPixels((char*)d->pix.scaled(QSize(width(),height())).toImage().bits());
+       if (width() <=0 || height() <=0)
+       {
+       if (scale())
+       {
        setWidth(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).width());
        setHeight(d->pix.scaled(QSize(d->pix.height()*scale(),d->pix.width()*scale())).height());
-QQuickWindow * win = parentItem()->window();
-        if(win)
-        {
-    qDebug("image window");
-    if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
-{
-    QPainter pnter (QQuickWindowPrivate::get(win)->m_backingStore->paintDevice());
-    pnter.drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage());
-    //win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), m_image);
-    QQuickWindowPrivate::get(win)->m_backingStore->flush(QRect((int)mapToItem(window()->contentItem(),QPoint(0,0)).x(),(int) mapToItem(window()->contentItem(),QPoint(0,0)).y(),d->width,d->height));
-    //win->endPaint();
+       } else {
+       setWidth(d->pix.width());
+       setHeight(d->pix.height());
+       }
+       }
 }
-}
-   /*     QQuickWindow * win = window();
-        if(win)
-        {
-    win->beginPaint();
-if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
-{
 
-    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage());
-    win->endPaint();
-}
-}
-*/
     }
-    QRectF targetRect;
-    QRectF sourceRect;
-    //TODO not implemented
-/*
-    switch (d->fillMode) {
-    default:
-    case Stretch:
-        targetRect = QRectF(0, 0, width(), height());
-        sourceRect = d->pix.rect();
-        break;
-
-    case PreserveAspectFit:
-        targetRect = QRectF(xOffset, yOffset, d->paintedWidth, d->paintedHeight);
-        sourceRect = d->pix.rect();
-        break;
-
-    case PreserveAspectCrop: {
-        targetRect = QRect(0, 0, width(), height());
-        qreal wscale = width() / qreal(d->pix.width());
-        qreal hscale = height() / qreal(d->pix.height());
-
-        if (wscale > hscale) {
-            int src = (hscale / wscale) * qreal(d->pix.height());
-            int y = 0;
-            if (d->vAlign == QQuickImage::AlignVCenter)
-                y = qCeil((d->pix.height() - src) / 2.);
-            else if (d->vAlign == QQuickImage::AlignBottom)
-                y = qCeil(d->pix.height() - src);
-            sourceRect = QRectF(0, y, d->pix.width(), src);
-
-        } else {
-            int src = (wscale / hscale) * qreal(d->pix.width());
-            int x = 0;
-            if (d->hAlign == QQuickImage::AlignHCenter)
-                x = qCeil((d->pix.width() - src) / 2.);
-            else if (d->hAlign == QQuickImage::AlignRight)
-                x = qCeil(d->pix.width() - src);
-            sourceRect = QRectF(x, 0, src, d->pix.height());
-        }
-        }
-        break;
-
-    case Tile:
-        targetRect = QRectF(0, 0, width(), height());
-        sourceRect = QRectF(-xOffset, -yOffset, width(), height());
-        hWrap = QSGTexture::Repeat;
-        vWrap = QSGTexture::Repeat;
-        break;
-
-    case TileHorizontally:
-        targetRect = QRectF(0, 0, width(), height());
-        sourceRect = QRectF(-xOffset, 0, width(), d->pix.height());
-        hWrap = QSGTexture::Repeat;
-        break;
-
-    case TileVertically:
-        targetRect = QRectF(0, 0, width(), height());
-        sourceRect = QRectF(0, -yOffset, d->pix.width(), height());
-        vWrap = QSGTexture::Repeat;
-        break;
-
-    case Pad:
-        qreal w = qMin(qreal(d->pix.width()), width());
-        qreal h = qMin(qreal(d->pix.height()), height());
-        qreal x = (d->pix.width() > width()) ? -xOffset : 0;
-        qreal y = (d->pix.height() > height()) ? -yOffset : 0;
-        targetRect = QRectF(x + xOffset, y + yOffset, w, h);
-        sourceRect = QRectF(x, y, w, h);
-        break;
-    };
-
-    qreal nsWidth = (hWrap == QSGTexture::Repeat) ? d->pix.width() / d->devicePixelRatio : d->pix.width();
-    qreal nsHeight = (vWrap == QSGTexture::Repeat) ? d->pix.height() / d->devicePixelRatio : d->pix.height();
-    QRectF nsrect(sourceRect.x() / nsWidth,
-                  sourceRect.y() / nsHeight,
-                  sourceRect.width() / nsWidth,
-                  sourceRect.height() / nsHeight);
-
-    if (targetRect.isEmpty()
-        || !qIsFinite(targetRect.width()) || !qIsFinite(targetRect.height())
-        || nsrect.isEmpty()
-        || !qIsFinite(nsrect.width()) || !qIsFinite(nsrect.height())) {
-        delete node;
-        return 0;
-    }
-
-    if (d->pixmapChanged) {
-        if (texture->isAtlasTexture() && (hWrap == QSGTexture::Repeat || vWrap == QSGTexture::Repeat || d->mipmap))
-            node->setTexture(texture->removedFromAtlas());
-        else
-            node->setTexture(texture);
-        d->pixmapChanged = false;
-    }
-
-    node->setMipmapFiltering(d->mipmap ? QSGTexture::Linear : QSGTexture::None);
-    node->setHorizontalWrapMode(hWrap);
-    node->setVerticalWrapMode(vWrap);
-    node->setFiltering(d->smooth ? QSGTexture::Linear : QSGTexture::Nearest);
-
-    node->setTargetRect(targetRect);
-    node->setInnerTargetRect(targetRect);
-    node->setSubSourceRect(nsrect);
-    node->setMirror(d->mirror);
-    node->setAntialiasing(d->antialiasing);
-    node->update();
-
-    return node;*/
-}
 
 void QQuickImage::pixmapChange()
 {
