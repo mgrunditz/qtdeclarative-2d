@@ -364,12 +364,10 @@ void QQuickWindowPrivate::forceUpdate(QQuickItem *item,QRect dirtyRect)
       //  QQuickItemPrivate::get(item)->dirty(QQuickItemPrivate::ChildrenUpdateMask);
    if (item)
     {
-        qDebug("before isVisible QQuickWindow");
      if (/*item->isVisible()  && */QQuickItem::ItemHasContents)
      {
         if (item != contentItem)
             item->updateFromWin(dirtyRect);
-        qDebug("QQuickWindow: updateFromWin");
 
      }
     QList <QQuickItem *> items = QQuickItemPrivate::get(item)->paintOrderChildItems();
@@ -421,7 +419,6 @@ void QQuickWindowPrivate::syncSceneGraph()
     QML_MEMORY_SCOPE_STRING("SceneGraph");
     Q_Q(QQuickWindow);
     fContent = contentItem;
-    qDebug("renderSceneGraph");
     animationController->advance();
      emit q->beforeRendering();
 QRect rect(QPoint(), q->geometry().size());
@@ -456,7 +453,6 @@ QRect rect(QPoint(), q->geometry().size());
 
 void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
 {
-    qDebug("renderSceneGraph");
     QML_MEMORY_SCOPE_STRING("SceneGraph");
     Q_Q(QQuickWindow);
     //QMutexLocker locker(&q->localmut);
@@ -467,9 +463,7 @@ void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
     emit q->beforeRendering();
     if (q->fbbackbuffer)
     {
-        qDebug("forceupdate");
         forceUpdate(contentItem,rect);
-        qDebug("after forceupdate");
         //forceUpdate(contentItem,rect);
         j=0;
         /*for (i=0;i<q->geometry().height();i++)
@@ -479,7 +473,6 @@ void QQuickWindowPrivate::renderSceneGraph(const QSize &size)
             memcpy(q->fbp+j,q->fbbackbuffer+j,q->geometry().width()*4);
          
         }*/
-        qDebug("QQuickWindow: memcpy");
         memcpy(q->fbp,q->fbbackbuffer,q->screensize);
         memset(q->fbbackbuffer,0,q->screensize);
    }
@@ -517,10 +510,8 @@ void QQuickWindow::beginPaint()
       qpnter = new QPainter(device);
    if (!qpnter->isActive())
     qpnter->begin(device);
-   qDebug("QQuickWindow::beginPaint");
 }
 }
-   qDebug("QQuickWindow::beginPaint 11");
 }
 }
 QQuickWindowPrivate::QQuickWindowPrivate()

@@ -523,7 +523,6 @@ void QQuickImage::updatePaintNode()
     {
        //setMimage(d->pix.scaled(QSize(d->pix.width()*scale(),d->pix.height()*scale())).toImage(),this);
        //setMimage(d->pix.scaled(QSize(width(),height())).toImage(),this);
-        qDebug() << "Image: width: " << width() << "height: " << height();
        setBufferSize(d->pix.scaled(QSize(width(),height())).toImage().width()*d->pix.scaled(QSize(width(),height())).toImage().height()*4,d->pix.scaled(QSize(width(),height())).toImage().width(),d->pix.scaled(QSize(width(),height())).toImage().height());
        setPixels((char*)d->pix.scaled(QSize(width(),height())).toImage().bits());
        if (width() <=0 || height() <=0)

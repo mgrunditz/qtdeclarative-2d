@@ -491,34 +491,11 @@ void QQuickRectangle::setColor(const QColor &c)
 
 void QQuickRectangle::updatePaintNode()
 {
-        qDebug("paintnode rect1");
     QQuickWindow *win;
     QQuickItemPrivate * pit= QQuickItemPrivate::get(this);
     QImage timg;
     if (width()>0 && height()>0)
 {
-    qDebug("painting rect");
-    qDebug() << "rect w: " << width() << "rect h: " << height();
-    timg = QImage(width(),height(), QImage::Format_ARGB32_Premultiplied);
-    timg.fill(0);
-   QPainter p(&timg);
-    if (!p.isActive())
-    p.begin(&timg);
-        //p.setOpacity(1.0);
- if (gradient())
-        {
-                QQuickGradient *grad = gradient();
-                QGradientStops stops=grad->gradientStops();
-                QLinearGradient gradi(QPointF(0,0),QPointF(1,1));//(QPoint(0,0),QPoint(width(),height()));
-                gradi.setStops(stops);
-                int j=0;
-                for (j=0;j<stops.size();j++)
-                {
-
-                        gradi.setColorAt(stops.at(j).first,stops.at(j).second);
-                        gradi.setCoordinateMode(QGradient::ObjectBoundingMode);
-                        qDebug("gradi");
-                        qDebug() << stops.at(j).second << stops.at(j).first;
         }
       p.setBrush(QBrush(gradi));
         p.fillRect(QRect(0,0,d_func()->width,d_func()->height),gradi);

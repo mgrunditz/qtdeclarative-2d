@@ -2080,20 +2080,16 @@ void QQuickItem::setBufferSize(int bsize,int w,int h)
 
     bufferwidth = w;
     bufferheight = h;
-    qDebug() << "bsize: " << bsize << "buffersize: " << buffersize;
 if (buffersize!= bsize && buffersize >0) {
     free(pixelbuffer);
     pixelbuffer = 0;
     pixelbuffer = (char*) malloc(bsize);
-    qDebug("setBufferSize.. realloc");
 } else if (/*buffersize != bsize &&*/ buffersize <=0 || !pixelbuffer)
 {
 
     pixelbuffer = (char*) malloc(bsize);
-    qDebug("setBufferSize.. malloc");
 }
     buffersize = bsize;
-    qDebug() << "bufw: " << bufferwidth << "bufh: " << bufferheight;
 
 }
 
@@ -2104,21 +2100,17 @@ void QQuickItem::setPixels(char * pixels)
     /*pixelbuffer = (char*)malloc((int)ceil(width())*(int)ceil(height()*4));
     memcpy(pixelbuffer,pixels,(int)ceil(width())*(int)ceil(height()*4));
     return;*/
-qDebug("setPixels start");
     if (width() > 0 && height() > 0)
 {
-    qDebug() << "item w: " << width() << "item h: " << height();
 //if (pixelbuffer)
     //free(pixelbuffer);
     //pixelbuffer = 0;
     //buffersize = 0;
   if (pixels)
   {
-    qDebug() << "buffersize: " << buffersize;
     //if (buffersize <= 0 && width()>0 && height()>0 )
     if (buffersize <= 0 && bufferwidth>0 && bufferheight>0 )
     {
-        qDebug("!!!!!!!!!!!!!!!!!!!!!!!set pixel malloc !!!!!!!!!!!!!!");
         pixelbuffer = (char*)malloc(bufferwidth*bufferheight*4);
         //pixelbuffer = (char*)calloc(width()*height(),4);
         buffersize = bufferwidth*bufferheight*4;
@@ -2130,7 +2122,6 @@ qDebug("setPixels start");
         free(pixelbuffer);
         pixelbuffer=0;
         pixelbuffer = (char*)malloc(bufferwidth*bufferheight*4);
-        qDebug("setpixles realloc");
         buffersize = bufferwidth*bufferheight*4;
         memcpy(pixelbuffer,pixels,buffersize);
 
@@ -2138,7 +2129,6 @@ qDebug("setPixels start");
 {
     if (buffersize>0)
     {
-    qDebug("setpixels memcpy");
     memcpy(pixelbuffer,pixels,buffersize);
     }
 }
@@ -2147,7 +2137,6 @@ qDebug("setPixels start");
   // pixelbuffer=0;
  }
 }
-    qDebug("end setpixels");
 }
 
 
@@ -2159,7 +2148,6 @@ qDebug("setPixels start");
 */
 QQuickItem::~QQuickItem()
 {
-qDebug("!!!!!!!!!!!!!!!!!!item destructor!!!!!!!!!!!!!!!!!!!!!!!!");
   if(buffersize > 0)
     free(pixelbuffer);
   // Remove scenegraph
@@ -2953,7 +2941,6 @@ void QQuickItemPrivate::init(QQuickItem *parent)
         memset(q->pixelbuffer,0,width*height*4);*/
     } else {
 
-    qDebug("!!!!!!!!!!!!! init 0 !!!!!!!!!!!!!");
     }
     q->parentprocess = true;
 
@@ -4036,7 +4023,6 @@ void QQuickItem::setBaselineOffset(qreal offset)
 void QQuickItem::updateFromWin(QRect dirtyRect)
 {
     Q_D(QQuickItem);
-    qDebug("updateFromWin");
     if (!this)
         return;
   QMutexLocker locker(&localmut);
@@ -4052,14 +4038,11 @@ void QQuickItem::updateFromWin(QRect dirtyRect)
     }
     else {*/
     if (window()) {
-        qDebug("before local win check");
         win = window();
-        qDebug("local win");
     }
     //}
 if (win && parentprocess)
 {
-    qDebug("QQuickItem win is there");
 if (bufferwidth*bufferheight*4 != buffersize) {
     //updatePaintNode();
 } else if (bufferwidth*bufferheight*4 == buffersize) {
@@ -4073,21 +4056,18 @@ if (bufferwidth*bufferheight*4 != buffersize) {
       //  qDebug("fbbackbuffer null");
     if (!pixelbuffer)
     {
-        qDebug("pixelbuffer null");
         //updatePaintNode();
     }
     else
     {
     if (QQuickWindowPrivate::get(window())->contentItem != this)
     {
-    qDebug("iptr set");
     iptr[0] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->contentItem()*/,QPoint(0,0)).x();
 iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->contentItem()*/,QPoint(0,0)).y();
     iptr[2] = bufferwidth;
     iptr[3] = bufferheight;
     iptr[4] = 0;
     iptr[5] = 0;
-    qDebug("iptr set2");
    // qDebug() << "x: " << iptr[0] << "y: " << iptr[1] << "w: " << iptr[2] << "h: " << iptr[3];
     if (iptr[0] <0)
     {
@@ -4113,7 +4093,6 @@ iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->c
 //      iptr[3] = 1;
     if (iptr[1]+iptr[3] > 480)
         iptr[3] = iptr[3]-(iptr[3]+iptr[1]-480);
-    qDebug("before memcopy");
     if (iptr[2] * iptr[3] *4 > buffersize)
     {
         qDebug("wrong final size, not rendering");
@@ -4121,7 +4100,6 @@ iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->c
     }
   if (iptr[2] > 0 && iptr[3] >0 && buffersize<480*272*4)
     memcopy(pixelbuffer,iptr,win->fbbackbuffer);
-    qDebug("memcopy!!!");
         }
    }
 } else

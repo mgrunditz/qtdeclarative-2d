@@ -210,10 +210,8 @@ void QQuickImageBase::load()
         }
 
     } else {
-    qDebug() << "scheme" << d->url.scheme();
     if (d->url.scheme()=="http") {
 	accessManager->get(QNetworkRequest(d->url));
-	qDebug("http");
     } else {        
         const qreal targetDevicePixelRatio = (window() ? window()->devicePixelRatio() : qApp->devicePixelRatio());
         d->devicePixelRatio = 1.0;
@@ -222,7 +220,6 @@ void QQuickImageBase::load()
         resolve2xLocalFile(d->url, targetDevicePixelRatio, &loadUrl, &d->devicePixelRatio);
        //TODO Need to support proper image paths
         //qDebug() << "filename: " << d->url.fileName();
-        qDebug() << "filename: " <<  QQmlFile::urlToLocalFileOrQrc(d->url);//d->url.toString();
 		d->pix = QPixmap( QQmlFile::urlToLocalFileOrQrc(d->url));//d->url.toLocalFile());
         //setMimage(d->pix.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied),this);
      requestFinished();
@@ -237,18 +234,15 @@ QNetworkAccessManager *QQuickImageBase::networkAccessManager()
         //Q_ASSERT(threadObject);
         //accessManager = QQmlEnginePrivate::get(qmlEngine(this))->createNetworkAccessManager(this);
         accessManager = new QNetworkAccessManager(this);
-	qDebug("new networkmanager");
     connect(accessManager, SIGNAL(finished(QNetworkReply*)),
         this, SLOT(replyFinished(QNetworkReply*)));
   //  }
-    qDebug("QQuickImageBase::networkAccessManager");
     return accessManager;
 }
 void QQuickImageBase::replyFinished(QNetworkReply * rep)
 {
     Q_D(QQuickImageBase);
     d->pix.loadFromData(rep->readAll());
-    qDebug("reply finished");
     setMimage(d->pix.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied),this);
 }
 
