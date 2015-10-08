@@ -1,9 +1,9 @@
 	.text
 	/*.align 4*/
 
-.global memcopy
+.global alphablend
 
-memcopy:
+alphablend:
 	PUSH {r0-r12}
         VPUSH {s0-s31}
         /*str	fp, [sp, #-4]!

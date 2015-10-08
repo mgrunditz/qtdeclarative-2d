@@ -81,7 +81,7 @@
 #include <algorithm>
 #include <float.h>
 
-extern "C" void memcopy(char *src,int *iptr,char *dest);
+extern "C" void alphablender(char *src,int *iptr,char *dest);
 
 // XXX todo Check that elements that create items handle memory correctly after visual ownership change
 
@@ -4030,33 +4030,18 @@ void QQuickItem::updateFromWin(QRect dirtyRect)
         win = NULL;
     int iptr[6];
 // TODO Item can only be updated if it has a window
-    /*if (parentItem())
-    {
-        qDebug("before parent win check");
-        win = parentItem()->window();
-        qDebug("parentitem win");
-    }
-    else {*/
-    if (window()) {
+   if (window()) {
         win = window();
     }
-    //}
 if (win && parentprocess)
 {
 if (bufferwidth*bufferheight*4 != buffersize) {
-    //updatePaintNode();
 } else if (bufferwidth*bufferheight*4 == buffersize) {
- //   qDebug("buffersize before memcopy");
-    //QRect rect(QPoint(0,0),win->geometry().size());
-  //  memset(pixelbuffer,0,width()*height()*4);
-//    updatePaintNode();
     int i,j;
     // Painting to the window backbuffer , transformed to screen coordinates
-    //if (!win->fbbackbuffer)
-      //  qDebug("fbbackbuffer null");
     if (!pixelbuffer)
     {
-        //updatePaintNode();
+        // doing updatePaintNode();?
     }
     else
     {
@@ -4099,7 +4084,7 @@ iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->c
         return;
     }
   if (iptr[2] > 0 && iptr[3] >0 && buffersize<480*272*4)
-    memcopy(pixelbuffer,iptr,win->fbbackbuffer);
+    alphablend(pixelbuffer,iptr,win->fbbackbuffer);
         }
    }
 } else
@@ -4110,8 +4095,6 @@ iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->c
 else
 {
     qDebug("win is null");
-    //buffersize=0;
-    //pixelbuffer = (char*)malloc(width()*height()*4);
 }
 
 } 
@@ -4128,20 +4111,6 @@ void QQuickItem::update()
         return;
     }
         d->dirty(QQuickItemPrivate::Content);
-     //if(window())
-     //QQuickWindowPrivate::get(window())->renderSceneGraph(QSize(640,480));
-/*     QQuickWindow * win = window();
-        if(win)
-        {
-    win->beginPaint();
-if( QQuickWindowPrivate::get(win)->m_backingStore->paintDevice())
-{
-
-    win->qpnter->drawImage(mapToItem(window()->contentItem(),QPoint(0,0)).x(), mapToItem(window()->contentItem(),QPoint(0,0)).y(), d->m_image);
-    win->endPaint();
-}
-}
-*/
 }
 
 /*!
