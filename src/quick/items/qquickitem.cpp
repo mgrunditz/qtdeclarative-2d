@@ -81,7 +81,7 @@
 #include <algorithm>
 #include <float.h>
 
-extern "C" void alphablender(char *src,int *iptr,char *dest);
+extern "C" void alphablend(char *src,int *iptr,char *dest);
 
 // XXX todo Check that elements that create items handle memory correctly after visual ownership change
 
