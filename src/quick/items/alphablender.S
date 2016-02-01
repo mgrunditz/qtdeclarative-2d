@@ -1,6 +1,11 @@
+        .data
+        .balign 4
+stride:
+        .word 0
 	.text
 	/*.align 4*/
-
+        
+        .balign 4
 .global alphablend
 
 alphablend:
@@ -23,6 +28,10 @@ alphablend:
 	ldr r6,[r1]
 	add r1,r1,#4
 	ldr r8,[r1]
+	add r1,r1,#4
+        ldr r10, addr_stride
+        ldr r11,[r1]
+        str r11,[r10]
 	mov r12,#4
 	mul r9,r4,r12
 	mul r10,r6,r12
@@ -38,14 +47,19 @@ b1:
 	/* 16 or 32 ?*/
 	mov r6,#4
 	mul r7,r4,r6
-/* screen witdh bytes */
+/* screen witdh bytes 
 	mov r6,#1920
+*/
+        ldr r6,addr_stride
+        ldr r6,[r6]
 	mul r9,r5,r6
 	add r7,r7,r9
 	add r2,r2,r7
 	b blitloop1
 blitloop:
-   	mov r6,#1920
+   	/*mov r6,#1920*/
+        ldr r6,addr_stride
+        ldr r6,[r6]
 	add r2,r2,r6
 	/* 16 or 32 ?*/
 	mov r6,#4
@@ -137,3 +151,7 @@ noalpha:
 	strb r7,[r2],#1	
 	strb r9,[r2],#1	
 	b contblit
+
+
+addr_stride:
+        .word stride

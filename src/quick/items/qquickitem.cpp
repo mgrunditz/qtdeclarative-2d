@@ -4028,7 +4028,7 @@ void QQuickItem::updateFromWin(QRect dirtyRect)
   QMutexLocker locker(&localmut);
   QQuickWindow * win;
         win = NULL;
-    int iptr[6];
+    int iptr[7];
 // TODO Item can only be updated if it has a window
    if (window()) {
         win = window();
@@ -4053,6 +4053,7 @@ iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->c
     iptr[3] = bufferheight;
     iptr[4] = 0;
     iptr[5] = 0;
+    iptr[6] = window()->screenwidth*4;
    // qDebug() << "x: " << iptr[0] << "y: " << iptr[1] << "w: " << iptr[2] << "h: " << iptr[3];
     if (iptr[0] <0)
     {
