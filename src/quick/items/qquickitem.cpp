@@ -4047,43 +4047,58 @@ if (bufferwidth*bufferheight*4 != buffersize) {
     {
     if (QQuickWindowPrivate::get(window())->contentItem != this)
     {
-    iptr[0] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->contentItem()*/,QPoint(0,0)).x();
-iptr[1] = mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->contentItem()*/,QPoint(0,0)).y();
+    int localx=mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->contentItem()*/,QPoint(0,0)).x();
+    int localy=mapToItem(QQuickWindowPrivate::get(window())->contentItem/*window()->contentItem()*/,QPoint(0,0)).y();
+    int relativex = 0;
+    int relativey = 0;
+    iptr[0] = localx;
+    iptr[1] = localy;
     iptr[2] = bufferwidth;
     iptr[3] = bufferheight;
     iptr[4] = 0;
     iptr[5] = 0;
     iptr[6] = window()->screenwidth*4;
    // qDebug() << "x: " << iptr[0] << "y: " << iptr[1] << "w: " << iptr[2] << "h: " << iptr[3];
-    if (iptr[0] <0)
+    if (localx <0)
     {
-        iptr[4] = iptr[0] - iptr[0] - iptr[0];
-        iptr[2] = iptr[2] - iptr[4];
+        relativex = relativex-localx;// = iptr[0] - iptr[0] - iptr[0];
+        iptr[2] = iptr[2]-localx;// - iptr[4];
         iptr[0] = 0;
     }
-    if (iptr[0] > 1280)
-        iptr[0] = 1280;
-    if (iptr[1] <0)
+    if (iptr[0] > window()->screenwidth)
+        {
+        iptr[2] = 0;
+        iptr[3] = 0;
+        iptr[0] = window()->screenwidth;
+        }
+    if (localy <0)
     {
-        iptr[5] = iptr[1] - iptr[1] - iptr[1];
+        relativey = relativey-localy;   //iptr[5] = iptr[1] - iptr[1] - iptr[1];
         iptr[3] = iptr[3] - iptr[5];
         iptr[1] = 0;
     }
-    if (iptr[1] > 272)
-        iptr[1] = 272;
-    //if (iptr[2] <=0)
-//      iptr[2] = 1;
-    if (iptr[0]+iptr[2] > 800)
-        iptr[2] = iptr[2]-(iptr[2]+iptr[0]-800);
-  //  if (iptr[3] <=0)
-//      iptr[3] = 1;
-    if (iptr[1]+iptr[3] > 480)
-        iptr[3] = iptr[3]-(iptr[3]+iptr[1]-480);
+    if (iptr[1] > window()->screenheight)
+    {
+        iptr[1] = window()->screenheight;
+        iptr[2] = 0;
+        iptr[3] = 0;
+    } 
+
+    if (localx+iptr[2] > window()->screenwidth)
+        iptr[2] = iptr[2]-((localx+iptr[2])-window()->screenwidth);//iptr[2]-(iptr[2]+iptr[0]-800);
+
+    if (localy+iptr[3] > window()->screenheight)
+        iptr[3] = iptr[3]-((localy+iptr[3])-window()->screenheight);//iptr[2]-(iptr[2]+iptr[0]-800);
+
+    iptr[4] = relativex;
+    iptr[5] = relativey;
+
     if (iptr[2] * iptr[3] *4 > buffersize)
     {
         qDebug("wrong final size, not rendering");
         return;
     }
+
   if (iptr[2] > 0 && iptr[3] >0 && buffersize<480*272*4)
     alphablend(pixelbuffer,iptr,win->fbbackbuffer);
         }
